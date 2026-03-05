@@ -1,41 +1,175 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GitHub Profile Viewer</title>
+  <title>GitHub Account Analyzer Dashboard</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
-  <div class="container">
-    <h1>🔍 GitHub Profile Searcher</h1>
-    <!-- Search Section -->
-    <div class="search-box">
-      <input type="text" id="usernameInput" placeholder="Enter GitHub username..." />
-      <button onclick="getUser()">Search</button>
-    </div>
-    <!-- User Info Section -->
-    <div id="profileContainer" class="profile-card hidden">
-      <div class="profile-header">
-        <img id="avatar" src="" alt="Profile Picture" />
-        <div>
-          <h2 id="name"></h2>
-          <p id="bio"></p>
-          <a id="profileLink" href="#" target="_blank">View Profile ↗</a>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo">
+        <svg height="32" viewBox="0 0 16 16" version="1.1" width="32" aria-hidden="true" fill="currentColor">
+          <path fill-rule="evenodd"
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z">
+          </path>
+        </svg>
+        <span>GitHub Analyzer</span>
+      </div>
+      <div class="search-container">
+        <input type="text" id="usernameInput" placeholder="Main User" />
+        <span class="vs-text">VS</span>
+        <input type="text" id="compareInput" placeholder="Compare User (Optional)" />
+        <button id="searchBtn">Analyze</button>
+      </div>
+      <button id="themeToggle" class="theme-toggle">☀️ Light</button>
+    </header>
+
+    <div class="main-layout">
+      <!-- Sidebar History -->
+      <aside class="sidebar" id="historySidebar">
+        <h3>Recent Searches</h3>
+        <ul id="historyList"></ul>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="dashboard-content">
+        <!-- Loaders and Errors -->
+        <div id="loading" class="state-message hidden">
+          <div class="spinner"></div>
+          <p>Analyzing profile...</p>
         </div>
-      </div>
-      <div class="profile-stats">
-        <p>Followers: <span id="followers"></span></p>
-        <p>Following: <span id="following"></span></p>
-        <p>Public Repos: <span id="reposCount"></span></p>
-      </div>
-      <h3>Repositories</h3>
-      <div id="reposList" class="repos"></div>
+        <div id="error" class="state-message error-msg hidden"></div>
+
+        <!-- Single User Dashboard -->
+        <div id="dashboardSection" class="hidden">
+
+          <div class="profile-card">
+            <img id="avatar" src="" alt="Avatar" />
+            <div class="profile-info">
+              <h2 id="name">Name</h2>
+              <p id="bio">Bio...</p>
+              <a id="profileLink" href="#" target="_blank">View GitHub Profile ↗</a>
+              <div class="base-stats">
+                <span title="Followers">👥 <strong id="followers">0</strong></span>
+                <span title="Following">🏃 <strong id="following">0</strong></span>
+                <span title="Public Repos">📁 <strong id="reposCount">0</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span class="stat-icon">⭐</span>
+              <div class="stat-details">
+                <h4>Total Stars</h4>
+                <p id="totalStars">0</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon">🍴</span>
+              <div class="stat-details">
+                <h4>Total Forks</h4>
+                <p id="totalForks">0</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon">📈</span>
+              <div class="stat-details">
+                <h4>Avg. Stars / Repo</h4>
+                <p id="avgStars">0</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon">🔥</span>
+              <div class="stat-details">
+                <h4>Most Used Language</h4>
+                <p id="topLanguage">-</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon">🏆</span>
+              <div class="stat-details">
+                <h4>Most Starred</h4>
+                <p id="topRepo">-</p>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-icon">🎂</span>
+              <div class="stat-details">
+                <h4>Account Age</h4>
+                <p id="accountAge">0 Years</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="charts-section">
+            <div class="chart-card">
+              <h3>Language Distribution</h3>
+              <div class="canvas-wrapper">
+                <canvas id="langPieChart"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <h3>Top 5 Starred Repos</h3>
+              <div class="canvas-wrapper">
+                <canvas id="starsBarChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="repos-section">
+            <h3>Recent Repositories</h3>
+            <div id="reposList" class="repos-list"></div>
+          </div>
+
+        </div>
+
+        <!-- Compare View -->
+        <div id="compareSection" class="compare-view hidden">
+          <h2>🆚 User Comparison</h2>
+          <div class="compare-grid">
+
+            <!-- User 1 Card -->
+            <div class="compare-card" id="cmpUser1">
+              <img id="cmpAvatar1" src="" alt="User 1" />
+              <h3 id="cmpName1">User 1</h3>
+              <p id="cmpBio1">Bio</p>
+              <ul class="cmp-stats">
+                <li>Followers: <strong id="cmpFollowers1">0</strong></li>
+                <li>Public Repos: <strong id="cmpRepos1">0</strong></li>
+                <li>Total Stars: <strong id="cmpStars1">0</strong></li>
+              </ul>
+              <a id="cmpLink1" href="#" target="_blank">Profile ↗</a>
+            </div>
+
+            <!-- User 2 Card -->
+            <div class="compare-card" id="cmpUser2">
+              <img id="cmpAvatar2" src="" alt="User 2" />
+              <h3 id="cmpName2">User 2</h3>
+              <p id="cmpBio2">Bio</p>
+              <ul class="cmp-stats">
+                <li>Followers: <strong id="cmpFollowers2">0</strong></li>
+                <li>Public Repos: <strong id="cmpRepos2">0</strong></li>
+                <li>Total Stars: <strong id="cmpStars2">0</strong></li>
+              </ul>
+              <a id="cmpLink2" href="#" target="_blank">Profile ↗</a>
+            </div>
+
+          </div>
+
+          <!-- Developer Analysis Section -->
+          <div id="developer-analysis" class="analysis-section"></div>
+        </div>
+
+      </main>
     </div>
-    <!-- Error Message -->
-    <p id="error" class="error hidden"></p>
-    <p id="loading" class="hidden">⏳ Loading...</p>
   </div>
   <script src="script.js"></script>
 </body>
+
 </html>
