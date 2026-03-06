@@ -1,83 +1,268 @@
-# 🚀 GitHub Profile Analyzer Dashboard
+# 🚀 GitHub Account Analyzer & Enhancer
 
-A modern, responsive, dark-themed dashboard that allows users to analyze GitHub profiles, compare two developers side-by-side, and visualize their top languages and repository statistics—all powered by the GitHub REST API.
+A web-based **GitHub analytics dashboard** that analyzes developer profiles using the **GitHub REST API** and presents meaningful insights such as repository statistics, language distribution, and profile comparisons.
 
-![GitHub Profile Analyzer](https://socialify.git.ci/Manoj-Sanagapalli20/Github-profile-viewer/image?description=1&font=Inter&name=1&owner=1&pattern=Circuit%20Board&theme=Dark)
+This project transforms a simple GitHub profile viewer into a **developer analytics tool** that helps understand GitHub activity and repository impact through visualizations and comparisons.
+
+---
+
+## 🌐 Live Demo
+
+🔗 https://github-profile-analysis29.vercel.app
+
+---
 
 ## ✨ Features
 
-- **🔍 Profile Search**: Instantly fetch any public GitHub profile by username.
-- **📊 Interactive Charts**: Visualizes repository data like "Most Used Languages" (Pie Chart) and "Top Starred Repos" (Bar Chart) using Chart.js.
-- **🆚 User Comparison**: Compare two developers side-by-side! See who has more followers, stars, and repositories with automatic winner highlighting.
-- **🌗 Dark / Light Mode**: Beautiful glassmorphism UI with automatic system preference detection and manual toggle.
-- **📜 Search History**: Remembers your recent searches using `localStorage` for quick access.
-- **🛡️ Unlimited API Requests**: Uses a Vercel Serverless Function proxy to securely attach a GitHub Personal Access Token, protecting against the standard 60 requests/hr rate limit.
+### 🔎 GitHub Profile Search
+Search any GitHub username to view profile information including:
 
-## 🛠️ Tech Stack
+- Avatar
+- Username
+- Bio
+- Followers
+- Following
+- Public repositories
+- Profile link
 
-- **Frontend**: HTML5, CSS3 (Custom Variables, Flexbox/Grid, Glassmorphism), Vanilla JavaScript
-- **Data Visualization**: [Chart.js](https://www.chartjs.org/)
-- **Backend / Deployment**: [Vercel](https://vercel.com/) (Serverless Functions for secure API routing)
-- **API**: [GitHub REST API v3](https://docs.github.com/en/rest)
+The data is retrieved using the **GitHub REST API**.
 
-## 🚀 Live Demo
+---
 
-[View Live Site](https://github-profile-viewer-black-mu.vercel.app/) _(Requires your active Vercel deployment URL)_
+### 📦 Repository Insights
+Displays a list of public repositories for the searched user with key details:
 
-## 💻 Local Development Setup
+- Repository name
+- Description
+- Stars ⭐
+- Forks 🍴
+- Primary language
+- Last updated date
 
-To run this project locally, simply clone the repository and use a local server.
+This helps quickly analyze a developer's public projects.
 
-```bash
-# 1. Clone the repository
+---
+
+### 📊 Language Distribution Chart
+Analyzes the programming languages used across repositories and visualizes them using a **Pie Chart**.
+
+Example:
+
+- JavaScript – 5 repositories
+- Python – 3 repositories
+- HTML – 2 repositories
+
+Implemented using **Chart.js**.
+
+---
+
+### ⭐ Stars Distribution Chart
+Displays a **Bar Chart** showing the star count of repositories.
+
+Features:
+
+- Repositories sorted by popularity
+- Top repositories visualized
+- Helps identify impactful projects
+
+---
+
+### ⚖️ Compare Two GitHub Users
+Allows comparison between two GitHub profiles.
+
+Metrics compared:
+
+- Followers
+- Public repositories
+- Total stars
+- Forks
+
+Both profiles are displayed side-by-side for easy analysis.
+
+---
+
+### 🧠 Developer Strength Analysis
+The application calculates a **Developer Strength Score** to determine which profile is stronger.
+
+Score formula:
+
+```
+score =
+(repos * 0.25) +
+(stars * 0.35) +
+(forks * 0.20) +
+(followers * 0.20)
+```
+
+The system then displays the result:
+
+🏆 *User A has a stronger GitHub profile than User B*
+
+---
+
+### 🕘 Search History
+Stores the **last 5 searched usernames** using `localStorage`.
+
+Features:
+
+- Quick access to recently searched profiles
+- Clickable search history
+- Faster navigation
+
+---
+
+### ⚡ Performance Optimization (Caching)
+To reduce unnecessary API requests and improve performance, the application uses **localStorage caching**.
+
+When a username is searched:
+
+1. The fetched data is stored locally
+2. If the same user is searched again within **10 minutes**
+3. Cached data is used instead of calling the API
+
+Benefits:
+
+- Faster loading
+- Reduced API calls
+- Helps avoid GitHub API rate limits
+
+---
+
+## ⚠️ Error Handling
+
+The project includes robust error handling for common issues.
+
+### User Not Found
+If a username does not exist:
+
+```
+GitHub user not found
+```
+
+### API Rate Limit Exceeded
+
+GitHub allows **60 requests per hour for unauthenticated requests**.
+
+If the rate limit is reached, the application displays:
+
+```
+GitHub API rate limit exceeded. Please try again later.
+```
+
+### Network Errors
+
+Unexpected errors are handled gracefully with user-friendly messages.
+
+---
+
+## 🛠 Tech Stack
+
+**Frontend**
+
+- HTML5
+- CSS3
+- JavaScript (Vanilla)
+
+**Libraries**
+
+- Chart.js
+
+**API**
+
+- GitHub REST API
+
+**Deployment**
+
+- Vercel
+
+---
+
+## 📁 Project Structure
+
+```
+project-folder
+│
+├── index.html
+├── style.css
+├── script.js
+├── assets/
+│   └── loading.gif
+└── README.md
+```
+
+---
+
+## ⚙️ How It Works
+
+1. User enters a GitHub username
+2. Application sends request to **GitHub REST API**
+3. Profile and repository data are retrieved
+4. Repository data is processed to compute:
+   - Language distribution
+   - Star distribution
+5. Charts are generated using **Chart.js**
+6. Search history and cached results are stored in **localStorage**
+
+---
+
+## 🔗 GitHub API Endpoints Used
+
+Fetch user profile
+
+```
+https://api.github.com/users/{username}
+```
+
+Fetch repositories
+
+```
+https://api.github.com/users/{username}/repos
+```
+
+---
+
+## 💻 Installation
+
+Clone the repository
+
+```
 git clone https://github.com/Manoj-Sanagapalli20/Github-profile-viewer.git
-
-# 2. Navigate to directory
-cd Github-profile-viewer
-
-# 3. Start a local server (e.g., using Python, Node, or VS Code Live Server)
-# If using Python 3:
-python -m http.server 8000
-
-# 4. Open in browser
-http://localhost:8000
 ```
 
-> **Note on Rate Limits (Local vs Vercel)**
-> When running locally using standard `index.html`, the app falls back to direct unauthenticated GitHub API calls (limited to 60 requests per hour).
-> When deployed to Vercel, it routes requests through `/api/github.js` using a stored server-side token (up to 5,000 requests per hour).
+Navigate to the project folder
 
-## ☁️ Vercel Deployment & Token Configuration
-
-To deploy this yourself and avoid the GitHub API rate limits, follow these steps:
-
-1. **Deploy to Vercel**: Import this repository into your Vercel dashboard.
-2. **Generate a GitHub Token**:
-   - Go to GitHub -> Settings -> Developer Settings -> Personal access tokens (Tokens (classic)).
-   - Generate a new token with **no scopes checked** (or just `public_repo` if you wish). This is enough to increase the rate limit.
-3. **Add Environment Variable**:
-   - In your Vercel Project Settings, go to **Environment Variables**.
-   - Add a new variable:
-     - **Name**: `GITHUB_TOKEN`
-     - **Value**: `ghp_YOUR_TOKEN_HERE`
-4. **Redeploy**: Go to the Deployments tab and hit **Redeploy** so the token is injected into the serverless function.
-
-## 📂 Project Structure
-
-```text
-├── index.html       # Main UI skeleton
-├── style.css        # Animations, layouts, dark/light themes
-├── script.js        # DOM manipulation, stats calculation, Chart.js logic
-├── vercel.json      # Routing configuration for Vercel deployment
-└── api/
-    └── github.js    # Vercel Serverless Function (Handles secure GitHub API calls)
+```
+cd github-account-analyzer
 ```
 
-## 🤝 Contributing
+Open the project
 
-Contributions, issues, and feature requests are welcome!
-Feel free to check [issues page](https://github.com/Manoj-Sanagapalli20/Github-profile-viewer/issues).
+```
+Open index.html in your browser
+```
 
-## 📜 License
+---
 
-This project is open-source and available under the [MIT License](LICENSE).
+## 🚧 Future Improvements
+
+Possible enhancements:
+
+- GitHub contribution activity visualization
+- Radar chart for developer skill comparison
+- Repository quality scoring
+- Dark / Light theme toggle
+- GitHub organization insights
+
+---
+
+## 👨‍💻 Author
+
+**Manoj Sanagapalli**
+
+AIML Student | Software Developer
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**.
