@@ -126,22 +126,8 @@
   // The GitHub token is stored as a Vercel environment variable (GITHUB_TOKEN)
   // and is injected server-side — never exposed to the browser.
   async function githubFetch(apiPath) {
-    const proxyUrl = `/api/github?path=${encodeURIComponent(apiPath)}`;
-    try {
-      const res = await fetch(proxyUrl);
-      // 404 here means the /api route itself doesn't exist (local dev without Vercel CLI)
-      // In that case fall back to calling GitHub directly (unauthenticated, rate-limited)
-      if (res.status === 404) {
-        const text = await res.text();
-        // A GitHub-style 404 has a JSON body with "message"; an HTML 404 means no proxy
-        try { JSON.parse(text); return new Response(text, { status: 404, headers: { "Content-Type": "application/json" } }); }
-        catch (_) { return fetch(`https://api.github.com/${apiPath}`); }
-      }
-      return res;
-    } catch (_) {
-      // Network error reaching the proxy — fall back to direct GitHub call
-      return fetch(`https://api.github.com/${apiPath}`);
-    }
+    const usernameParam = encodeURIComponent(apiPath.replace(/^users\//, ''));
+    return fetch(`/api/github?username=${usernameParam}`);
   }
 
   // ─── Cache Utilities (Layer 1: Memory  |  Layer 2: localStorage) ──────────
