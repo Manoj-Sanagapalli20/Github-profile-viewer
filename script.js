@@ -1,4 +1,4 @@
-﻿document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   // Main Elements
   const usernameInput = document.getElementById("usernameInput");
   const compareInput = document.getElementById("compareInput");
@@ -43,7 +43,7 @@
     updateThemeToggleText();
     // Re-render charts to switch label text colors
     if (window.lastReposData && dashboardSection.classList.contains("hidden") === false) {
-      renderCharts(window.lastReposData);
+      renderCharts(window.lastReposData, window.lastContributionsData);
     }
   });
 
@@ -104,6 +104,11 @@
     hide(errorEl);
     show(loadingEl);
 
+    const rpgCardSection = document.getElementById("rpgCardSection");
+    const timelineCardSection = document.getElementById("timelineCardSection");
+    if (rpgCardSection) hide(rpgCardSection);
+    if (timelineCardSection) hide(timelineCardSection);
+
     if (compareUser) {
       saveHistory(mainUser);
       saveHistory(compareUser);
@@ -155,12 +160,13 @@
     }
   }
 
-  function setCache(username, profile, repos) {
+  function setCache(username, profile, repos, contributions) {
     const key = username.toLowerCase();
     const entry = {
       username: key,
       profile,
       repos,
+      contributions: contributions || "",
       timestamp: Date.now()
     };
     sessionCache.set(key, entry); // always write to memory
@@ -169,6 +175,15 @@
     } catch (_) {
       // Storage quota exceeded — silently ignore
     }
+  }
+
+  async function fetchContributionsData(username) {
+    const cached = getCached(username);
+    if (cached && cached.contributions) return cached.contributions; // cache hit
+
+    const response = await fetch(`/api/contributions?username=${encodeURIComponent(username)}`);
+    if (!response.ok) return "";
+    return await response.text();
   }
   // ───────────────────────────────────────────────────────────────────────────
 
@@ -195,9 +210,18 @@
     return await reposResponse.json();
   }
 
-  // Single User Logic
   async function processSingleUser(username) {
     try {
+      const graphContainer = document.getElementById("contributionGraph");
+      const contributionCard = document.getElementById("contributionCard");
+      
+      // Reset contributions section
+      graphContainer.innerHTML = '<div class="spinner" style="margin: 20px auto;"></div>';
+      hide(contributionCard);
+
+      // Start fetching contributions in parallel
+      const contributionsPromise = fetchContributionsData(username).catch(() => "");
+
       const userData = await fetchUserData(username);
 
       // Update basic profile
@@ -221,14 +245,167 @@
         reposData = await fetchReposData(username);
       }
 
-      // Persist to cache after fetching both profile and repos
-      setCache(username, userData, reposData);
+      // Wait for contributions to complete
+      const contributionsData = await contributionsPromise;
+
+      // Persist to cache after fetching profile, repos and contributions
+      setCache(username, userData, reposData, contributionsData);
 
       window.lastReposData = reposData; // cache for theme toggle re-renders
+      window.lastContributionsData = contributionsData; // cache for theme toggle re-renders
 
       calculateStats(reposData);
-      renderCharts(reposData);
+      renderCharts(reposData, contributionsData);
       renderReposList(reposData);
+      generateRPGCard(userData, reposData, contributionsData);
+      generateTimeline(userData, reposData);
+
+      // Inject contributions graph if loaded successfully
+      if (contributionsData) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = contributionsData;
+
+        // 1. Extract Total Contributions from text
+        let totalCountText = "0";
+        const headerEl = tempDiv.querySelector('.js-yearly-contributions h2');
+        if (headerEl) {
+          const match = headerEl.textContent.match(/([\d,]+)\s+contribution/i);
+          if (match) totalCountText = match[1];
+        }
+
+        // 2. Query all days
+        const dayCells = Array.from(tempDiv.querySelectorAll('td.ContributionCalendar-day, rect.ContributionCalendar-day'));
+        
+        // Sort chronologically
+        dayCells.sort((a, b) => {
+          const dateA = a.getAttribute('data-date') || "";
+          const dateB = b.getAttribute('data-date') || "";
+          return dateA.localeCompare(dateB);
+        });
+
+        // 3. Streaks and Active Days Calculations
+        let activeDays = 0;
+        let maxStreak = 0;
+        let currentStreak = 0;
+        const todayStr = new Date().toISOString().split('T')[0];
+
+        dayCells.forEach(cell => {
+          const date = cell.getAttribute('data-date');
+          if (!date) return;
+
+          const level = parseInt(cell.getAttribute('data-level') || "0");
+          if (level > 0) {
+            activeDays++;
+            currentStreak++;
+            if (currentStreak > maxStreak) {
+              maxStreak = currentStreak;
+            }
+          } else {
+            if (date < todayStr) {
+              currentStreak = 0;
+            }
+          }
+        });
+
+        // Dynamic HTML Header and Stats Cards Markup matching the attached premium mockup!
+        const heatmapHeaderHTML = `
+          <div class="heatmap-header">
+            <div class="heatmap-title-container">
+              <span class="heatmap-fire-icon">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                </svg>
+              </span>
+              <div class="heatmap-title-text">
+                <h3>Contribution Heatmap</h3>
+                <p>Your daily contribution activity over the year</p>
+              </div>
+            </div>
+            
+            <div class="heatmap-stats-grid">
+              <div class="heatmap-stat-card theme-green">
+                <span class="stat-card-icon">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <circle cx="12" cy="12" r="6"></circle>
+                    <circle cx="12" cy="12" r="2"></circle>
+                  </svg>
+                </span>
+                <div class="stat-card-details">
+                  <span class="stat-card-value">${totalCountText}</span>
+                  <span class="stat-card-label">Total</span>
+                </div>
+              </div>
+              <div class="heatmap-stat-card theme-blue">
+                <span class="stat-card-icon">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                </span>
+                <div class="stat-card-details">
+                  <span class="stat-card-value">${activeDays}</span>
+                  <span class="stat-card-label">Active Days</span>
+                </div>
+              </div>
+              <div class="heatmap-stat-card theme-purple">
+                <span class="stat-card-icon">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
+                  </svg>
+                </span>
+                <div class="stat-card-details">
+                  <span class="stat-card-value">${maxStreak}</span>
+                  <span class="stat-card-label">Max Streak</span>
+                </div>
+              </div>
+              <div class="heatmap-stat-card theme-orange">
+                <span class="stat-card-icon">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                  </svg>
+                </span>
+                <div class="stat-card-details">
+                  <span class="stat-card-value">${currentStreak}</span>
+                  <span class="stat-card-label">Current</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Extract raw table
+        const calendarTable = tempDiv.querySelector('.ContributionCalendar-grid');
+        let gridHTML = "";
+        if (calendarTable) {
+          gridHTML = calendarTable.outerHTML;
+        } else {
+          gridHTML = tempDiv.innerHTML;
+        }
+
+        // Custom premium footer legend (dots centered, Less left, More right)
+        const legendHTML = `
+          <div class="heatmap-legend">
+            <span>Less</span>
+            <div class="legend-dots">
+              <div class="legend-dot" data-level="0"></div>
+              <div class="legend-dot" data-level="1"></div>
+              <div class="legend-dot" data-level="2"></div>
+              <div class="legend-dot" data-level="3"></div>
+              <div class="legend-dot" data-level="4"></div>
+            </div>
+            <span>More</span>
+          </div>
+        `;
+
+        graphContainer.innerHTML = heatmapHeaderHTML + `<div class="heatmap-grid-container">${gridHTML}</div>` + legendHTML;
+        show(contributionCard);
+      } else {
+        hide(contributionCard);
+      }
 
       hide(loadingEl);
       show(dashboardSection);
@@ -281,7 +458,7 @@
     topRepoEl.textContent = topRepoObj && topRepoObj.name ? topRepoObj.name : "-";
   }
 
-  function renderCharts(repos) {
+  function renderCharts(repos, contributionsHTML) {
     if (chartsInstance.pie) chartsInstance.pie.destroy();
     if (chartsInstance.bar) chartsInstance.bar.destroy();
 
@@ -297,61 +474,359 @@
 
     const langLabels = Object.keys(langCount);
     const langData = Object.values(langCount);
-    const pieColors = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#e83e8c', '#20c997'];
+    
+    // Map language colors
+    const langColors = {
+      'javascript': '#f1e05a',
+      'typescript': '#3178c6',
+      'html': '#e34c26',
+      'css': '#563d7c',
+      'python': '#3572a5',
+      'ruby': '#701516',
+      'go': '#00add8',
+      'java': '#b07219',
+      'c++': '#f34b7d',
+      'c#': '#178600',
+      'c': '#555555',
+      'php': '#4f5d95',
+      'rust': '#dea584',
+      'shell': '#89e051'
+    };
+
+    const fallbackColors = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40', '#e83e8c', '#20c997'];
+    const segmentColors = langLabels.map((lang, idx) => {
+      const langLower = lang.toLowerCase();
+      return langColors[langLower] || fallbackColors[idx % fallbackColors.length];
+    });
+
+    // Update overlay text
+    const overlayLangCount = document.getElementById('overlayLangCount');
+    if (overlayLangCount) {
+      overlayLangCount.textContent = `${langLabels.length} ${langLabels.length === 1 ? 'Language' : 'Languages'}`;
+    }
 
     const ctxPie = document.getElementById('langPieChart').getContext('2d');
     chartsInstance.pie = new Chart(ctxPie, {
       type: 'doughnut',
       data: {
         labels: langLabels,
-        datasets: [{ data: langData, backgroundColor: pieColors.slice(0, langLabels.length), borderWidth: 0 }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: textColor } } } }
-    });
-
-    // === Bar Chart Data (Top 5 Starred Repos) ===
-    const sortedRepos = [...repos].sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0)).slice(0, 5);
-    const barLabels = sortedRepos.map(r => r.name);
-    const barData = sortedRepos.map(r => r.stargazers_count || 0);
-
-    const ctxBar = document.getElementById('starsBarChart').getContext('2d');
-    chartsInstance.bar = new Chart(ctxBar, {
-      type: 'bar',
-      data: {
-        labels: barLabels,
-        datasets: [{ label: 'Stars', data: barData, backgroundColor: '#58a6ff' }]
+        datasets: [{
+          data: langData,
+          backgroundColor: segmentColors,
+          borderWidth: 0,
+          borderRadius: 4,
+          cutout: '75%'
+        }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            enabled: true,
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.raw || 0;
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                return ` ${label}: ${value} repos (${percentage}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // === Render Custom Details & Quick Stats ===
+    const sortedLangs = Object.entries(langCount)
+      .sort((a, b) => b[1] - a[1]);
+
+    const totalReposWithLang = Object.values(langCount).reduce((sum, val) => sum + val, 0);
+    const breakdownList = document.getElementById('langBreakdownList');
+    if (breakdownList) {
+      breakdownList.innerHTML = sortedLangs.map(([lang, count]) => {
+        const percentage = totalReposWithLang > 0 ? ((count / totalReposWithLang) * 100).toFixed(1) : 0;
+        const langLower = lang.toLowerCase();
+        const dotColor = langColors[langLower] || fallbackColors[sortedLangs.findIndex(([l]) => l === lang) % fallbackColors.length];
+
+        return `
+          <div class="lang-breakdown-item">
+            <div class="item-info-row">
+              <div class="item-name-group">
+                <span class="item-dot" style="background-color: ${dotColor}"></span>
+                <span>${lang}</span>
+              </div>
+              <span class="item-percentage">${percentage}%</span>
+            </div>
+            <div class="item-progress-track">
+              <div class="item-progress-bar" style="background-color: ${dotColor}; width: ${percentage}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    const quickMostUsed = document.getElementById('quickMostUsed');
+    const quickTotalLangs = document.getElementById('quickTotalLangs');
+    if (quickMostUsed && sortedLangs.length > 0) {
+      const topLang = sortedLangs[0][0];
+      const topLangLower = topLang.toLowerCase();
+      const topColor = langColors[topLangLower] || '#58a6ff';
+      quickMostUsed.textContent = topLang;
+      quickMostUsed.style.color = topColor;
+    }
+    if (quickTotalLangs) {
+      quickTotalLangs.textContent = langLabels.length;
+    }
+
+    // === Recent Activity Chart (Last 30 Days of Contributions) ===
+    let contributions = [];
+    
+    if (contributionsHTML) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = contributionsHTML;
+      
+      const dayCells = Array.from(tempDiv.querySelectorAll('td.ContributionCalendar-day, rect.ContributionCalendar-day'));
+      
+      // Sort chronologically
+      dayCells.sort((a, b) => {
+        const dateA = a.getAttribute('data-date') || "";
+        const dateB = b.getAttribute('data-date') || "";
+        return dateA.localeCompare(dateB);
+      });
+      
+      // Slice the last 30 days
+      const last30Cells = dayCells.slice(-30);
+      
+      contributions = last30Cells.map(cell => {
+        const dateStr = cell.getAttribute('data-date') || "";
+        const count = parseInt(cell.getAttribute('data-count') || cell.getAttribute('data-level') || "0");
+        
+        // Format date: e.g. "2026-05-21" -> "May 21"
+        let formattedDate = dateStr;
+        if (dateStr) {
+          const parts = dateStr.split('-');
+          if (parts.length === 3) {
+            const dateObj = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          }
+        }
+        
+        return { date: formattedDate, count };
+      });
+    }
+
+    // Fallback if no contributions are loaded yet
+    if (contributions.length === 0) {
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const formattedDate = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        contributions.push({ date: formattedDate, count: 0 });
+      }
+    }
+
+    let totalAct = contributions.reduce((sum, item) => sum + item.count, 0);
+    let peakAct = Math.max(...contributions.map(item => item.count));
+    let avgAct = (totalAct / contributions.length).toFixed(1);
+    
+    // Update HTML pill metrics
+    const actTotalEl = document.getElementById('actTotal');
+    const actAvgEl = document.getElementById('actAvg');
+    const actPeakEl = document.getElementById('actPeak');
+    
+    if (actTotalEl) actTotalEl.textContent = `${totalAct} Total`;
+    if (actAvgEl) actAvgEl.textContent = `${avgAct} Avg/Day`;
+    if (actPeakEl) actPeakEl.textContent = `${peakAct} Peak`;
+
+    const ctxAct = document.getElementById('recentActivityChart').getContext('2d');
+    
+    // Create gradient fill
+    const gradientFill = ctxAct.createLinearGradient(0, 0, 0, 250);
+    gradientFill.addColorStop(0, 'rgba(88, 166, 255, 0.25)');
+    gradientFill.addColorStop(1, 'rgba(88, 166, 255, 0.0)');
+    
+    chartsInstance.bar = new Chart(ctxAct, {
+      type: 'line',
+      data: {
+        labels: contributions.map(item => item.date),
+        datasets: [{
+          label: 'Contributions',
+          data: contributions.map(item => item.count),
+          borderColor: '#58a6ff',
+          borderWidth: 2.5,
+          pointBackgroundColor: '#58a6ff',
+          pointBorderColor: '#0b0f17',
+          pointBorderWidth: 1.5,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          fill: true,
+          backgroundColor: gradientFill,
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            enabled: true,
+            backgroundColor: '#0d131f',
+            titleColor: '#ffffff',
+            bodyColor: '#58a6ff',
+            borderColor: '#1a2333',
+            borderWidth: 1,
+            padding: 10,
+            displayColors: false,
+            callbacks: {
+              label: function(context) {
+                return ` ${context.raw} contributions`;
+              }
+            }
+          }
+        },
         scales: {
-          x: { ticks: { color: textColor, maxRotation: 45, minRotation: 0 } },
-          y: { ticks: { color: textColor } }
+          x: {
+            grid: {
+              color: 'rgba(26, 35, 51, 0.4)',
+              tickBorderDash: [3, 3]
+            },
+            ticks: {
+              color: '#7d8590',
+              font: {
+                size: 10
+              },
+              maxTicksLimit: 10
+            }
+          },
+          y: {
+            grid: {
+              color: 'rgba(26, 35, 51, 0.4)',
+              tickBorderDash: [3, 3]
+            },
+            ticks: {
+              color: '#7d8590',
+              font: {
+                size: 10
+              },
+              stepSize: 1,
+              precision: 0
+            }
+          }
         }
       }
     });
   }
 
-  function renderReposList(repos) {
+  let activeReposData = [];
+  let currentSortMode = 'updated';
+  let currentViewMode = 'grid';
+
+  function renderReposList(repos, skipSort = false) {
+    if (!repos) return;
+    
+    // Save to local reference
+    if (repos !== activeReposData) {
+      activeReposData = repos;
+    }
+
     reposList.innerHTML = "";
-    if (!repos || repos.length === 0) {
-      reposList.innerHTML = "<p>No public repositories found.</p>";
+    if (activeReposData.length === 0) {
+      reposList.innerHTML = "<p style='color:var(--text-muted); grid-column: 1/-1; text-align: center; padding: 20px;'>No public repositories found.</p>";
       return;
     }
-    // Only show top 6 recent / or just first 6
-    const toShow = repos.slice(0, 6);
+
+    // Sort repositories if not skipped
+    if (!skipSort) {
+      activeReposData.sort((a, b) => {
+        if (currentSortMode === 'stars') {
+          return (b.stargazers_count || 0) - (a.stargazers_count || 0);
+        } else if (currentSortMode === 'forks') {
+          return (b.forks_count || 0) - (a.forks_count || 0);
+        } else if (currentSortMode === 'name') {
+          return a.name.localeCompare(b.name);
+        } else {
+          // Default: updated
+          return new Date(b.updated_at) - new Date(a.updated_at);
+        }
+      });
+    }
+
+    // Map language colors
+    const langColors = {
+      'javascript': '#f1e05a',
+      'typescript': '#3178c6',
+      'html': '#e34c26',
+      'css': '#563d7c',
+      'python': '#3572a5',
+      'ruby': '#701516',
+      'go': '#00add8',
+      'java': '#b07219',
+      'c++': '#f34b7d',
+      'c#': '#178600',
+      'c': '#555555',
+      'php': '#4f5d95',
+      'rust': '#dea584',
+      'shell': '#89e051'
+    };
+
+    // Slice top 6
+    const toShow = activeReposData.slice(0, 6);
+
     reposList.innerHTML = toShow.map(r => {
-      const descText = r.description ? (r.description.length > 70 ? r.description.substring(0, 70) + '...' : r.description) : "";
-      const desc = r.description ? `<p class="repo-desc">${descText}</p>` : "";
-      return `<div class="repo-item">
-                <a href="${r.html_url}" target="_blank" rel="noopener noreferrer">${r.name}</a>
-                ${desc}
-                <div style="font-size:0.85rem; color:var(--text-muted); margin-top:10px;">
-                  ⭐ ${r.stargazers_count || 0} | 🍴 ${r.forks_count || 0} 
-                  ${r.language ? `| 💻 ${r.language}` : ''}
-                </div>
-              </div>`;
+      // Date formatting: DD/MM/YYYY matching mockup
+      const dateObj = new Date(r.updated_at);
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const year = dateObj.getFullYear();
+      const formattedDate = `${day}/${month}/${year}`;
+
+      // Language dot color
+      const langLower = (r.language || "").toLowerCase();
+      const dotColor = langColors[langLower] || '#58a6ff';
+
+      return `
+        <div class="repo-item-premium">
+          <div class="repo-top-premium">
+            <a href="${r.html_url}" target="_blank" rel="noopener noreferrer" class="repo-title-premium">${r.name}</a>
+          </div>
+          
+          <div class="repo-badge-pills">
+            ${r.language ? `
+            <span class="repo-badge-pill lang-pill">
+              <span class="lang-dot" style="background-color: ${dotColor}"></span>
+              ${r.language}
+            </span>` : ''}
+            
+            <span class="repo-badge-pill stars-pill">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="badge-icon icon-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+              ${r.stargazers_count || 0}
+            </span>
+            
+            <span class="repo-badge-pill forks-pill">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="badge-icon icon-fork"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+              ${r.forks_count || 0}
+            </span>
+            
+            <span class="repo-badge-pill watchers-pill">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="badge-icon icon-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              ${r.watchers_count || 0}
+            </span>
+          </div>
+          
+          <div class="repo-footer-premium">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-clock"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <span>Updated ${formattedDate}</span>
+          </div>
+        </div>
+      `;
     }).join("");
   }
 
@@ -500,5 +975,319 @@
   compareInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") handleSearch();
   });
+
+  // Repos Control Event Listeners (Grid/List & Sorting)
+  const btnViewGrid = document.getElementById("btnViewGrid");
+  const btnViewList = document.getElementById("btnViewList");
+  
+  const sortButtons = {
+    stars: document.getElementById("btnSortStars"),
+    updated: document.getElementById("btnSortUpdated"),
+    name: document.getElementById("btnSortName"),
+    forks: document.getElementById("btnSortForks")
+  };
+
+  if (btnViewGrid && btnViewList) {
+    btnViewGrid.addEventListener("click", () => {
+      currentViewMode = 'grid';
+      btnViewGrid.classList.add("active");
+      btnViewList.classList.remove("active");
+      reposList.className = "repos-list grid-view";
+      renderReposList(activeReposData, true); // re-render layout, skip sorting
+    });
+
+    btnViewList.addEventListener("click", () => {
+      currentViewMode = 'list';
+      btnViewList.classList.add("active");
+      btnViewGrid.classList.remove("active");
+      reposList.className = "repos-list list-view";
+      renderReposList(activeReposData, true); // re-render layout, skip sorting
+    });
+  }
+
+  Object.entries(sortButtons).forEach(([mode, btn]) => {
+    if (btn) {
+      btn.addEventListener("click", () => {
+        currentSortMode = mode;
+        // Toggle active states
+        Object.values(sortButtons).forEach(b => { if (b) b.classList.remove("active"); });
+        btn.classList.add("active");
+        renderReposList(activeReposData); // re-sort and render!
+      });
+    }
+  });
+
+  // === Holographic RPG Persona Card Generator ===
+  function generateRPGCard(userData, reposData, contributionsHTML) {
+    const rpgCardSection = document.getElementById("rpgCardSection");
+    if (!rpgCardSection) return;
+
+    rpgCardSection.innerHTML = "";
+
+    // 1. Calculate Power (PWR) based on cumulative stars + forks
+    let stars = 0, forks = 0;
+    let langCountObj = {};
+    reposData.forEach(r => {
+      stars += r.stargazers_count || 0;
+      forks += r.forks_count || 0;
+      if (r.language) {
+        langCountObj[r.language] = (langCountObj[r.language] || 0) + 1;
+      }
+    });
+    const totalImpact = stars + forks;
+    const pwrScore = Math.min(100, Math.max(12, Math.round(Math.sqrt(totalImpact) * 16)));
+
+    // 2. Calculate Speed (SP) based on repositories active in the past 60 days
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+    const activeRepos = reposData.filter(r => new Date(r.updated_at) > sixtyDaysAgo).length;
+    const spScore = Math.min(100, Math.max(10, Math.round(activeRepos * 22)));
+
+    // 3. Calculate Stamina (STM) based on contributions calendar data
+    let activeDays = 0;
+    let maxStreak = 0;
+    if (contributionsHTML) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = contributionsHTML;
+      const dayCells = tempDiv.querySelectorAll('td.ContributionCalendar-day, rect.ContributionCalendar-day');
+      let currentStreak = 0;
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      dayCells.forEach(cell => {
+        const date = cell.getAttribute('data-date');
+        if (!date) return;
+        const level = parseInt(cell.getAttribute('data-level') || "0");
+        if (level > 0) {
+          activeDays++;
+          currentStreak++;
+          if (currentStreak > maxStreak) maxStreak = currentStreak;
+        } else {
+          if (date < todayStr) currentStreak = 0;
+        }
+      });
+    }
+    const stmScore = contributionsHTML 
+      ? Math.min(100, Math.max(15, Math.round((activeDays * 0.45) + (maxStreak * 2.2))))
+      : 50;
+
+    // 4. Calculate Versatility (VRS) based on distinct languages
+    const distinctLangs = Object.keys(langCountObj).length;
+    const vrsScore = Math.min(100, Math.max(10, Math.round(distinctLangs * 18)));
+
+    // Determine highest attribute for Class determination
+    const scores = { PWR: pwrScore, SP: spScore, STM: stmScore, VRS: vrsScore };
+    let highestAttr = "SP";
+    let maxVal = -1;
+    for (const [attr, val] of Object.entries(scores)) {
+      if (val > maxVal) {
+        maxVal = val;
+        highestAttr = attr;
+      }
+    }
+
+    let className = "Rapid Swiftblade";
+    let level = Math.max(1, Math.round((spScore + vrsScore) / 5.2));
+    let classBadge = "Rogue";
+    let flavorText = "A silent, rapid striker. Pushing hotfixes, refactoring architectures, and launching builds at blinding speeds. You resolve bugs before the browser can even refresh!";
+
+    if (highestAttr === "PWR") {
+      className = "Elite Code Warlord";
+      level = Math.max(1, Math.round((pwrScore + stmScore) / 5.2));
+      classBadge = "Warrior";
+      flavorText = "Your code holds colossal impact. Starred and forked by developers worldwide, you forge high-caliber repository monuments that stand tall in the GitHub arena!";
+    } else if (highestAttr === "STM") {
+      className = "Commit Paladin";
+      level = Math.max(1, Math.round((stmScore + spScore) / 5.2));
+      classBadge = "Paladin";
+      flavorText = "An unstoppable force of commits. Day after day, you push green nodes into the calendar grid, building an unbreakable coding legacy through pure grit!";
+    } else if (highestAttr === "VRS") {
+      className = "Polyglot Archmage";
+      level = Math.max(1, Math.round((vrsScore + pwrScore) / 5.2));
+      classBadge = "Mage";
+      flavorText = "A master of many tongues, weaving spells in JavaScript, Python, and CSS. No tech stack is too foreign, and no compiler can resist your incantations!";
+    }
+
+    const cardMarkup = `
+      <div class="rpg-persona-card">
+        <div class="rpg-header">
+          <div class="rpg-avatar-wrapper">
+            <img src="${userData.avatar_url}" alt="${userData.login}" class="rpg-avatar" />
+            <span class="rpg-level-badge">Lvl ${level} ${classBadge}</span>
+          </div>
+          <h2 class="rpg-class-title">${className}</h2>
+          <p class="rpg-flavor-text">"${flavorText}"</p>
+        </div>
+
+        <div class="rpg-attributes">
+          <div class="attribute-item attr-pwr">
+            <div class="attribute-info">
+              <span class="attribute-name">⚔️ Power (Impact)</span>
+              <span class="attribute-val">${pwrScore}</span>
+            </div>
+            <div class="attribute-track">
+              <div class="attribute-bar" style="width: ${pwrScore}%"></div>
+            </div>
+          </div>
+
+          <div class="attribute-item attr-sp">
+            <div class="attribute-info">
+              <span class="attribute-name">⚡ Speed (Velocity)</span>
+              <span class="attribute-val">${spScore}</span>
+            </div>
+            <div class="attribute-track">
+              <div class="attribute-bar" style="width: ${spScore}%"></div>
+            </div>
+          </div>
+
+          <div class="attribute-item attr-stm">
+            <div class="attribute-info">
+              <span class="attribute-name">🛡️ Stamina (Consistency)</span>
+              <span class="attribute-val">${stmScore}</span>
+            </div>
+            <div class="attribute-track">
+              <div class="attribute-bar" style="width: ${stmScore}%"></div>
+            </div>
+          </div>
+
+          <div class="attribute-item attr-vrs">
+            <div class="attribute-info">
+              <span class="attribute-name">🔮 Versatility (Languages)</span>
+              <span class="attribute-val">${vrsScore}</span>
+            </div>
+            <div class="attribute-track">
+              <div class="attribute-bar" style="width: ${vrsScore}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    rpgCardSection.innerHTML = cardMarkup;
+    rpgCardSection.classList.remove("hidden");
+  }
+
+  // === Chronological Coding Journey Timeline Generator ===
+  function generateTimeline(userData, reposData) {
+    const timelineCardSection = document.getElementById("timelineCardSection");
+    if (!timelineCardSection) return;
+
+    timelineCardSection.innerHTML = "";
+
+    const sortedRepos = [...reposData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const milestones = [];
+
+    // Milestone 1: Account Creation
+    if (userData.created_at) {
+      const createdDate = new Date(userData.created_at);
+      milestones.push({
+        date: createdDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        title: "Started Coding Journey",
+        desc: `You officially created your GitHub account <strong>@${userData.login}</strong>! This marked the beginning of your software engineering journey.`,
+        type: "ms-creation"
+      });
+    }
+
+    // Milestone 2: First Repository
+    if (sortedRepos.length > 0) {
+      const repo = sortedRepos[0];
+      const repoDate = new Date(repo.created_at);
+      milestones.push({
+        date: repoDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        title: "First Public Project",
+        desc: `Created your very first public repository: <a href="${repo.html_url}" target="_blank" class="repo-title-premium" style="font-size:inherit; font-weight:700;">${repo.name}</a> and committed your first set of files!`,
+        type: "ms-creation"
+      });
+    }
+
+    // Milestone 3: Language Acquisitions
+    const acquiredLangs = new Set();
+    let languageMilestonesCount = 0;
+    for (let i = 0; i < sortedRepos.length; i++) {
+      const repo = sortedRepos[i];
+      if (repo.language && !acquiredLangs.has(repo.language)) {
+        acquiredLangs.add(repo.language);
+        languageMilestonesCount++;
+        const repoDate = new Date(repo.created_at);
+        milestones.push({
+          date: repoDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          title: `First ${repo.language} Project`,
+          desc: `Used <strong>${repo.language}</strong> for the first time on GitHub by creating your repository <a href="${repo.html_url}" target="_blank" class="repo-title-premium" style="font-size:inherit; font-weight:700;">${repo.name}</a>!`,
+          type: "ms-language"
+        });
+        if (languageMilestonesCount >= 3) break; // Limit to first 3 distinct languages to keep timeline concise
+      }
+    }
+
+    // Milestone 4: Most Starred Repository
+    if (reposData.length > 0) {
+      const sortedByStars = [...reposData].sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0));
+      const topRepo = sortedByStars[0];
+      if (topRepo && topRepo.stargazers_count > 0) {
+        const repoDate = new Date(topRepo.created_at);
+        milestones.push({
+          date: repoDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          title: "Most Popular Project 🌟",
+          desc: `Created <a href="${topRepo.html_url}" target="_blank" class="repo-title-premium" style="font-size:inherit; font-weight:700;">${topRepo.name}</a>, which earned ${topRepo.stargazers_count} stars and became your most popular project on GitHub!`,
+          type: "ms-starred"
+        });
+      }
+    }
+
+    // Milestone 5: Present Active State
+    milestones.push({
+      date: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      title: "The Journey Continues",
+      desc: "Currently active, committing code, building new projects, and learning new technologies. The road ahead is open!",
+      type: "ms-latest"
+    });
+
+    // Remove duplicates or sort chronologically to be absolutely certain
+    milestones.sort((a, b) => {
+      if (a.title.includes("Started")) return -1;
+      if (b.title.includes("Started")) return 1;
+      if (a.title.includes("Continues")) return 1;
+      if (b.title.includes("Continues")) return -1;
+      return new Date(a.date) - new Date(b.date);
+    });
+
+    // Render Timeline Header
+    let timelineHTML = `
+      <div class="timeline-header">
+        <span class="timeline-compass-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+          </svg>
+        </span>
+        <div class="timeline-title-text">
+          <h3>Coding Journey Timeline</h3>
+          <p>A timeline of your major programming milestones on GitHub</p>
+        </div>
+      </div>
+      <div class="odyssey-timeline">
+        <div class="odyssey-line"></div>
+    `;
+
+    // Render Timeline Items
+    milestones.forEach((ms, index) => {
+      const alignment = index % 2 === 0 ? "odyssey-left" : "odyssey-right";
+      timelineHTML += `
+        <div class="odyssey-item ${alignment} ${ms.type}">
+          <div class="odyssey-marker"></div>
+          <div class="odyssey-card-wrapper">
+            <div class="odyssey-card">
+              <span class="odyssey-date">${ms.date}</span>
+              <h4>${ms.title}</h4>
+              <p>${ms.desc}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    timelineHTML += `</div>`;
+    timelineCardSection.innerHTML = timelineHTML;
+    timelineCardSection.classList.remove("hidden");
+  }
 
 });

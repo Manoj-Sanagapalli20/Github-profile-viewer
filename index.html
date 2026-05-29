@@ -63,42 +63,41 @@
           </div>
 
           <div class="stats-grid">
-            <div class="stat-card">
+            <div class="stat-card theme-stars">
               <span class="stat-icon">⭐</span>
               <div class="stat-details">
                 <h4>Total Stars</h4>
                 <p id="totalStars">0</p>
               </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card theme-forks">
               <span class="stat-icon">🍴</span>
               <div class="stat-details">
                 <h4>Total Forks</h4>
                 <p id="totalForks">0</p>
               </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card theme-avg-stars">
               <span class="stat-icon">📈</span>
               <div class="stat-details">
                 <h4>Avg. Stars / Repo</h4>
                 <p id="avgStars">0</p>
               </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card theme-language">
               <span class="stat-icon">🔥</span>
               <div class="stat-details">
                 <h4>Most Used Language</h4>
                 <p id="topLanguage">-</p>
               </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card theme-top-repo">
               <span class="stat-icon">🏆</span>
               <div class="stat-details">
                 <h4>Most Starred</h4>
                 <p id="topRepo">-</p>
-              </div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card theme-age">
               <span class="stat-icon">🎂</span>
               <div class="stat-details">
                 <h4>Account Age</h4>
@@ -107,24 +106,190 @@
             </div>
           </div>
 
+          <!-- RPG Persona Card Section -->
+          <div id="rpgCardSection" class="rpg-card-section hidden">
+            <!-- Dynamically populated via JS -->
+          </div>
+
           <div class="charts-section">
-            <div class="chart-card">
-              <h3>Language Distribution</h3>
-              <div class="canvas-wrapper">
-                <canvas id="langPieChart"></canvas>
+            <div class="chart-card language-distribution-card">
+              <!-- Premium Header -->
+              <div class="lang-header">
+                <span class="lang-code-icon">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 18 22 12 16 6"></polyline>
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                  </svg>
+                </span>
+                <div class="lang-title-text">
+                  <h3>Programming Languages</h3>
+                  <p>Distribution of languages across your repositories</p>
+                </div>
+              </div>
+
+              <!-- Two Column Layout -->
+              <div class="lang-body">
+                <!-- Left Column: Chart with overlay -->
+                <div class="lang-chart-container">
+                  <div class="canvas-wrapper" style="position: relative;">
+                    <canvas id="langPieChart"></canvas>
+                    <!-- Center Overlay -->
+                    <div id="chartCenterOverlay" class="chart-center-overlay">
+                      <span class="sparkle-icon">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
+                      </span>
+                      <span id="overlayLangCount" class="overlay-text">0 Languages</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Column: Breakdown List & Quick Stats -->
+                <div class="lang-details-container">
+                  <h4 class="breakdown-title">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; color: #58a6ff;">
+                      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                      <polyline points="17 6 23 6 23 12"></polyline>
+                    </svg>
+                    Language Breakdown
+                  </h4>
+                  
+                  <div id="langBreakdownList" class="lang-breakdown-list">
+                    <!-- Dynamic Items Go Here -->
+                  </div>
+
+                  <div id="langQuickStats" class="lang-quick-stats">
+                    <div class="quick-stats-title">
+                      <span class="quick-stats-icon">✨</span>
+                      <span>Quick Stats</span>
+                    </div>
+                    <div class="quick-stats-grid">
+                      <div class="quick-stat-item">
+                        <span class="label">Most Used:</span>
+                        <strong id="quickMostUsed" class="value">-</strong>
+                      </div>
+                      <div class="quick-stat-item">
+                        <span class="label">Total Languages:</span>
+                        <strong id="quickTotalLangs" class="value">0</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="chart-card">
-              <h3>Top 5 Starred Repos</h3>
+            <div class="chart-card recent-activity-card">
+              <!-- Premium Header -->
+              <div class="activity-header">
+                <div class="activity-title-container">
+                  <span class="activity-icon-wrapper">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="6" y1="3" x2="6" y2="15"></line>
+                      <circle cx="18" cy="6" r="3"></circle>
+                      <circle cx="6" cy="18" r="3"></circle>
+                      <path d="M18 9a9 9 0 0 1-9 9"></path>
+                    </svg>
+                  </span>
+                  <div class="activity-title-text">
+                    <h3>Recent Activity</h3>
+                    <p>Your coding activity over the last 30 days</p>
+                  </div>
+                </div>
+                
+                <!-- Activity Badge Pills -->
+                <div class="activity-badges">
+                  <span class="activity-badge badge-green">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    <span id="actTotal">0 Total</span>
+                  </span>
+                  <span class="activity-badge badge-blue">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="20" x2="18" y2="10"></line>
+                      <line x1="12" y1="20" x2="12" y2="4"></line>
+                      <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span id="actAvg">0.0 Avg/Day</span>
+                  </span>
+                  <span class="activity-badge badge-purple">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <span id="actPeak">0 Peak</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Canvas wrapper -->
               <div class="canvas-wrapper">
-                <canvas id="starsBarChart"></canvas>
+                <canvas id="recentActivityChart"></canvas>
               </div>
             </div>
           </div>
 
+          <!-- Contribution Grid -->
+          <div id="contributionCard" class="contribution-card hidden">
+            <div id="contributionGraph" style="width: 100%;">
+              <div class="spinner" style="margin: 30px auto;"></div>
+            </div>
+          </div>
+
           <div class="repos-section">
-            <h3>Recent Repositories</h3>
-            <div id="reposList" class="repos-list"></div>
+            <div class="repos-header">
+              <div class="repos-title-container">
+                <span class="repos-code-icon">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="16 18 22 12 16 6"></polyline>
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                  </svg>
+                </span>
+                <div class="repos-title-text">
+                  <h3>Top Repositories</h3>
+                  <p>Showcase of your most popular projects</p>
+                </div>
+              </div>
+              
+              <div class="repos-controls">
+                <div class="view-toggle-group">
+                  <button id="btnViewGrid" class="control-btn active" title="Grid View">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                  </button>
+                  <button id="btnViewList" class="control-btn" title="List View">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                  </button>
+                </div>
+                
+                <div class="sort-toggle-group">
+                  <button id="btnSortStars" class="control-btn" data-sort="stars">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    Stars
+                  </button>
+                  <button id="btnSortUpdated" class="control-btn active" data-sort="updated">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    Updated
+                  </button>
+                  <button id="btnSortName" class="control-btn" data-sort="name">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                    Name
+                  </button>
+                  <button id="btnSortForks" class="control-btn" data-sort="forks">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                    Forks
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div id="reposList" class="repos-list grid-view"></div>
+          </div>
+
+          <!-- Timeline Section -->
+          <div id="timelineCardSection" class="timeline-card-section hidden">
+            <!-- Dynamically populated via JS -->
           </div>
 
         </div>
