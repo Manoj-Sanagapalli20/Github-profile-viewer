@@ -487,12 +487,18 @@ body {
 
 /* Repositories Dashboard Card */
 .repos-section {
-  background: #0b0f17 !important; /* Premium dark navy/black matching the heatmap */
-  border: 1px solid #1a2333 !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 16px !important;
-  padding: 28px !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+  padding: clamp(16px, 4vw, 28px) !important;
+  box-shadow: var(--card-shadow) !important;
   margin-top: 28px !important;
+}
+
+[data-theme="dark"] .repos-section {
+  background: #0b0f17 !important;
+  border: 1px solid #1a2333 !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* === Repos Header Flex Layout === */
@@ -503,8 +509,12 @@ body {
   flex-wrap: wrap !important;
   gap: 20px !important;
   margin-bottom: 24px !important;
-  border-bottom: 1px solid #1a2333 !important;
+  border-bottom: 1px solid var(--border-color) !important;
   padding-bottom: 18px !important;
+}
+
+[data-theme="dark"] .repos-header {
+  border-bottom-color: #1a2333 !important;
 }
 
 .repos-title-container {
@@ -529,9 +539,13 @@ body {
 .repos-title-text h3 {
   font-size: 1.35rem !important;
   font-weight: 700 !important;
-  color: #ffffff !important;
+  color: var(--text-main) !important;
   margin: 0 !important;
   letter-spacing: -0.02em !important;
+}
+
+[data-theme="dark"] .repos-title-text h3 {
+  color: #ffffff !important;
 }
 
 .repos-title-text p {
@@ -552,11 +566,17 @@ body {
 .sort-toggle-group {
   display: flex !important;
   align-items: center !important;
-  background: #0d131f !important;
-  border: 1px solid #1a2333 !important;
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 8px !important;
   padding: 3px !important;
   gap: 2px !important;
+}
+
+[data-theme="dark"] .view-toggle-group,
+[data-theme="dark"] .sort-toggle-group {
+  background: #0d131f !important;
+  border-color: #1a2333 !important;
 }
 
 .control-btn {
@@ -567,7 +587,7 @@ body {
   background: transparent !important;
   border: none !important;
   border-radius: 6px !important;
-  color: #7d8590 !important;
+  color: var(--text-muted) !important;
   padding: 6px 12px !important;
   font-size: 0.82rem !important;
   font-weight: 600 !important;
@@ -575,19 +595,32 @@ body {
   transition: all 0.2s ease !important;
 }
 
-.control-btn svg {
+[data-theme="dark"] .control-btn {
   color: #7d8590 !important;
+}
+
+.control-btn svg {
+  color: var(--text-muted) !important;
   transition: color 0.2s ease !important;
+}
+
+[data-theme="dark"] .control-btn svg {
+  color: #7d8590 !important;
 }
 
 /* Hover and active control states */
 .control-btn:hover {
+  color: var(--accent) !important;
+  background: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] .control-btn:hover {
   color: #ffffff !important;
   background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .control-btn.active {
-  background: #218bff !important; /* Premium project blue */
+  background: var(--accent) !important; /* Premium project blue */
   color: #ffffff !important;
   box-shadow: 0 4px 12px rgba(33, 139, 255, 0.3) !important;
 }
@@ -611,8 +644,8 @@ body {
 
 /* === Premium Capsule Repo Card === */
 .repo-item-premium {
-  background: #0d131f !important;
-  border: 1px solid #1a2333 !important;
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
   padding: 22px !important;
   border-radius: 12px !important;
   display: flex !important;
@@ -620,6 +653,11 @@ body {
   justify-content: space-between !important;
   min-height: 145px !important;
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+[data-theme="dark"] .repo-item-premium {
+  background: #0d131f !important;
+  border-color: #1a2333 !important;
 }
 
 .repo-item-premium:hover {
@@ -633,12 +671,16 @@ body {
 }
 
 .repo-title-premium {
-  color: #ffffff !important;
+  color: var(--text-main) !important;
   text-decoration: none !important;
   font-weight: 700 !important;
   font-size: 1.15rem !important;
   letter-spacing: -0.01em !important;
   transition: color 0.2s ease !important;
+}
+
+[data-theme="dark"] .repo-title-premium {
+  color: #ffffff !important;
 }
 
 .repo-item-premium:hover .repo-title-premium {
@@ -658,12 +700,18 @@ body {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 20px !important; /* Perfect Capsule Pill */
   padding: 4px 10px !important;
   font-size: 0.72rem !important;
   font-weight: 600 !important;
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .repo-badge-pill {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   color: #7d8590 !important;
 }
 
@@ -1011,11 +1059,11 @@ body {
    GitHub Contribution Graph Styling (Premium Heatmap Dashboard)
    ========================================================================== */
 .contribution-card {
-  background: #0b0f17 !important; /* Premium dark navy/black matching the mockup */
-  border: 1px solid #1a2333 !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 16px !important;
   padding: 28px !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: var(--card-shadow) !important;
   margin-bottom: 28px !important;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
 }
@@ -1069,14 +1117,14 @@ body {
 .heatmap-title-text h3 {
   font-size: 1.35rem !important;
   font-weight: 700 !important;
-  color: #ffffff !important;
+  color: var(--text-main) !important;
   margin: 0 !important;
   letter-spacing: -0.02em !important;
 }
 
 .heatmap-title-text p {
   font-size: 0.85rem !important;
-  color: #7d8590 !important;
+  color: var(--text-muted) !important;
   margin: 4px 0 0 0 !important;
 }
 
@@ -1093,8 +1141,9 @@ body {
   align-items: center;
   gap: 14px;
   padding: 16px 20px;
-  background: #0d131f !important;
+  background: var(--bg-tertiary) !important;
   border-radius: 10px !important;
+  border: 1px solid var(--border-color) !important;
   transition: transform 0.2s ease, box-shadow 0.2s ease !important;
 }
 
@@ -1129,54 +1178,54 @@ body {
 
 .stat-card-label {
   font-size: 0.72rem !important;
-  color: #7d8590 !important;
+  color: var(--text-muted) !important;
   font-weight: 500;
   margin-top: 2px;
 }
 
 /* Stat Cards Theme-Specific Colors matching the Mockup */
 .heatmap-stat-card.theme-green {
-  border: 1px solid rgba(57, 211, 83, 0.15) !important;
+  border: 1px solid rgba(46, 160, 67, 0.25) !important;
 }
 .heatmap-stat-card.theme-green .stat-card-icon {
-  background: rgba(57, 211, 83, 0.1);
-  color: #39d353;
+  background: rgba(46, 160, 67, 0.08);
+  color: #2ea043;
 }
 .heatmap-stat-card.theme-green .stat-card-value {
-  color: #39d353;
+  color: #2ea043;
 }
 
 .heatmap-stat-card.theme-blue {
-  border: 1px solid rgba(88, 166, 255, 0.15) !important;
+  border: 1px solid rgba(9, 105, 218, 0.25) !important;
 }
 .heatmap-stat-card.theme-blue .stat-card-icon {
-  background: rgba(88, 166, 255, 0.1);
-  color: #58a6ff;
+  background: rgba(9, 105, 218, 0.08);
+  color: #0969da;
 }
 .heatmap-stat-card.theme-blue .stat-card-value {
-  color: #58a6ff;
+  color: #0969da;
 }
 
 .heatmap-stat-card.theme-purple {
-  border: 1px solid rgba(188, 140, 255, 0.15) !important;
+  border: 1px solid rgba(130, 80, 223, 0.25) !important;
 }
 .heatmap-stat-card.theme-purple .stat-card-icon {
-  background: rgba(188, 140, 255, 0.1);
-  color: #bc8cff;
+  background: rgba(130, 80, 223, 0.08);
+  color: #8250df;
 }
 .heatmap-stat-card.theme-purple .stat-card-value {
-  color: #bc8cff;
+  color: #8250df;
 }
 
 .heatmap-stat-card.theme-orange {
-  border: 1px solid rgba(240, 136, 62, 0.15) !important;
+  border: 1px solid rgba(227, 98, 9, 0.25) !important;
 }
 .heatmap-stat-card.theme-orange .stat-card-icon {
-  background: rgba(240, 136, 62, 0.1);
-  color: #f0883e;
+  background: rgba(227, 98, 9, 0.08);
+  color: #e36209;
 }
 .heatmap-stat-card.theme-orange .stat-card-value {
-  color: #f0883e;
+  color: #e36209;
 }
 
 /* === Grid Layout & Circular Cells === */
@@ -1254,9 +1303,9 @@ td.ContributionCalendar-day:hover {
   width: 100%;
   margin-top: 24px;
   padding-top: 16px;
-  border-top: 1px solid #1a2333;
+  border-top: 1px solid var(--border-color);
   font-size: 0.78rem !important;
-  color: #7d8590 !important;
+  color: var(--text-muted) !important;
   font-weight: 500;
 }
 
@@ -1272,12 +1321,12 @@ td.ContributionCalendar-day:hover {
   border-radius: 50%;
 }
 
-/* Legend Dot Colors */
-.legend-dot[data-level="0"] { background-color: #161b22; }
-.legend-dot[data-level="1"] { background-color: #0e4429; }
-.legend-dot[data-level="2"] { background-color: #006d32; }
-.legend-dot[data-level="3"] { background-color: #26a641; }
-.legend-dot[data-level="4"] { background-color: #39d353; box-shadow: 0 0 6px rgba(57, 211, 83, 0.4); }
+/* Legend Dot Colors (Light Mode default) */
+.legend-dot[data-level="0"] { background-color: #ebedf0; }
+.legend-dot[data-level="1"] { background-color: #9be9a8; }
+.legend-dot[data-level="2"] { background-color: #40c463; }
+.legend-dot[data-level="3"] { background-color: #30a14e; }
+.legend-dot[data-level="4"] { background-color: #216e39; }
 
 /* Hide raw footers fetched from GitHub */
 .ContributionCalendar-footer,
@@ -1359,6 +1408,7 @@ td.ContributionCalendar-day:hover {
 /* Premium Unified Dark Mode Overrides for Entire Dashboard */
 [data-theme="dark"] .profile-card,
 [data-theme="dark"] .chart-card,
+[data-theme="dark"] .contribution-card,
 [data-theme="dark"] .sidebar {
   background: #0b0f17 !important;
   border: 1px solid #1a2333 !important;
@@ -1384,6 +1434,71 @@ td.ContributionCalendar-day:hover {
   border-color: rgba(57, 211, 83, 0.3) !important;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 20px rgba(57, 211, 83, 0.1) !important;
 }
+
+[data-theme="dark"] .heatmap-title-text h3 {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .heatmap-stat-card {
+  background: #0d131f !important;
+  border: 1px solid #1a2333 !important;
+}
+
+/* Specific glowing neon attributes for stats inside heatmap cards in dark mode */
+[data-theme="dark"] .heatmap-stat-card.theme-green {
+  border-color: rgba(57, 211, 83, 0.15) !important;
+}
+[data-theme="dark"] .heatmap-stat-card.theme-green .stat-card-icon {
+  background: rgba(57, 211, 83, 0.1) !important;
+  color: #39d353 !important;
+}
+[data-theme="dark"] .heatmap-stat-card.theme-green .stat-card-value {
+  color: #39d353 !important;
+}
+
+[data-theme="dark"] .heatmap-stat-card.theme-blue {
+  border-color: rgba(88, 166, 255, 0.15) !important;
+}
+[data-theme="dark"] .heatmap-stat-card.theme-blue .stat-card-icon {
+  background: rgba(88, 166, 255, 0.1) !important;
+  color: #58a6ff !important;
+}
+[data-theme="dark"] .heatmap-stat-card.theme-blue .stat-card-value {
+  color: #58a6ff !important;
+}
+
+[data-theme="dark"] .heatmap-stat-card.theme-purple {
+  border-color: rgba(188, 140, 255, 0.15) !important;
+}
+[data-theme="dark"] .heatmap-stat-card.theme-purple .stat-card-icon {
+  background: rgba(188, 140, 255, 0.1) !important;
+  color: #bc8cff !important;
+}
+[data-theme="dark"] .heatmap-stat-card.theme-purple .stat-card-value {
+  color: #bc8cff !important;
+}
+
+[data-theme="dark"] .heatmap-stat-card.theme-orange {
+  border-color: rgba(240, 136, 62, 0.15) !important;
+}
+[data-theme="dark"] .heatmap-stat-card.theme-orange .stat-card-icon {
+  background: rgba(240, 136, 62, 0.1) !important;
+  color: #f0883e !important;
+}
+[data-theme="dark"] .heatmap-stat-card.theme-orange .stat-card-value {
+  color: #f0883e !important;
+}
+
+[data-theme="dark"] .heatmap-legend {
+  border-top-color: #1a2333 !important;
+  color: #7d8590 !important;
+}
+
+[data-theme="dark"] .legend-dot[data-level="0"] { background-color: #161b22; }
+[data-theme="dark"] .legend-dot[data-level="1"] { background-color: #0e4429; }
+[data-theme="dark"] .legend-dot[data-level="2"] { background-color: #006d32; }
+[data-theme="dark"] .legend-dot[data-level="3"] { background-color: #26a641; }
+[data-theme="dark"] .legend-dot[data-level="4"] { background-color: #39d353; box-shadow: 0 0 6px rgba(57, 211, 83, 0.4); }
 
 [data-theme="dark"] .chart-card h3,
 [data-theme="dark"] .sidebar h3 {
@@ -1413,11 +1528,11 @@ td.ContributionCalendar-day:hover {
 
 /* --- Premium Language Distribution Card --- */
 .language-distribution-card {
-  background: #0b0f17 !important;
-  border: 1px solid #1a2333 !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 16px !important;
   padding: 28px !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: var(--card-shadow) !important;
 }
 
 [data-theme="dark"] .language-distribution-card {
@@ -1431,7 +1546,7 @@ td.ContributionCalendar-day:hover {
   align-items: center !important;
   gap: 12px !important;
   margin-bottom: 24px !important;
-  border-bottom: 1px solid #1a2333 !important;
+  border-bottom: 1px solid var(--border-color) !important;
   padding-bottom: 18px !important;
 }
 
@@ -1451,7 +1566,7 @@ td.ContributionCalendar-day:hover {
 .lang-title-text h3 {
   font-size: 1.35rem !important;
   font-weight: 700 !important;
-  color: #ffffff !important;
+  color: var(--text-main) !important;
   margin: 0 !important;
   letter-spacing: -0.02em !important;
 }
@@ -1515,7 +1630,7 @@ td.ContributionCalendar-day:hover {
 .chart-center-overlay .overlay-text {
   font-size: 0.82rem !important;
   font-weight: 700 !important;
-  color: #c9d1d9 !important;
+  color: var(--text-main) !important;
   text-align: center !important;
   letter-spacing: -0.01em !important;
 }
@@ -1536,7 +1651,7 @@ td.ContributionCalendar-day:hover {
 .breakdown-title {
   font-size: 0.9rem !important;
   font-weight: 700 !important;
-  color: #ffffff !important;
+  color: var(--text-main) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
   margin: 0 !important;
@@ -1564,14 +1679,18 @@ td.ContributionCalendar-day:hover {
   background: transparent !important;
 }
 .lang-breakdown-list::-webkit-scrollbar-thumb {
-  background: #1a2333 !important;
+  background: var(--border-color) !important;
   border-radius: 4px !important;
+}
+
+[data-theme="dark"] .lang-breakdown-list::-webkit-scrollbar-thumb {
+  background: #1a2333 !important;
 }
 
 /* Premium Rounded Item Row */
 .lang-breakdown-item {
-  background: #0d131f !important;
-  border: 1px solid #1a2333 !important;
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 12px !important;
   padding: 12px 16px !important;
   display: flex !important;
@@ -1581,6 +1700,16 @@ td.ContributionCalendar-day:hover {
 }
 
 .lang-breakdown-item:hover {
+  border-color: var(--accent) !important;
+  background: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] .lang-breakdown-item {
+  background: #0d131f !important;
+  border: 1px solid #1a2333 !important;
+}
+
+[data-theme="dark"] .lang-breakdown-item:hover {
   border-color: rgba(88, 166, 255, 0.25) !important;
   background: #121926 !important;
 }
@@ -1598,6 +1727,10 @@ td.ContributionCalendar-day:hover {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .item-name-group {
   color: #ffffff !important;
 }
 
@@ -1609,6 +1742,10 @@ td.ContributionCalendar-day:hover {
 }
 
 .item-percentage {
+  color: var(--accent) !important;
+}
+
+[data-theme="dark"] .item-percentage {
   color: #58a6ff !important;
 }
 
@@ -1616,9 +1753,13 @@ td.ContributionCalendar-day:hover {
 .item-progress-track {
   width: 100% !important;
   height: 5px !important;
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--bg-color) !important;
   border-radius: 10px !important;
   overflow: hidden !important;
+}
+
+[data-theme="dark"] .item-progress-track {
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .item-progress-bar {
@@ -1629,14 +1770,20 @@ td.ContributionCalendar-day:hover {
 
 /* Quick Stats Section */
 .lang-quick-stats {
-  background: rgba(188, 140, 255, 0.03) !important;
-  border: 1px solid rgba(188, 140, 255, 0.1) !important;
+  background: rgba(130, 80, 223, 0.04) !important;
+  border: 1px solid rgba(130, 80, 223, 0.15) !important;
   border-radius: 12px !important;
   padding: 14px 18px !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 10px !important;
   margin-top: 4px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="dark"] .lang-quick-stats {
+  background: rgba(188, 140, 255, 0.03) !important;
+  border: 1px solid rgba(188, 140, 255, 0.1) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
@@ -1688,11 +1835,11 @@ td.ContributionCalendar-day:hover {
 
 /* --- Premium Recent Activity Card --- */
 .recent-activity-card {
-  background: #0b0f17 !important;
-  border: 1px solid #1a2333 !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 16px !important;
   padding: 28px !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: var(--card-shadow) !important;
 }
 
 [data-theme="dark"] .recent-activity-card {
@@ -1705,8 +1852,12 @@ td.ContributionCalendar-day:hover {
   flex-direction: column !important;
   gap: 16px !important;
   margin-bottom: 24px !important;
-  border-bottom: 1px solid #1a2333 !important;
+  border-bottom: 1px solid var(--border-color) !important;
   padding-bottom: 18px !important;
+}
+
+[data-theme="dark"] .activity-header {
+  border-bottom-color: #1a2333 !important;
 }
 
 .activity-title-container {
@@ -1730,7 +1881,7 @@ td.ContributionCalendar-day:hover {
 .activity-title-text h3 {
   font-size: 1.35rem !important;
   font-weight: 700 !important;
-  color: #ffffff !important;
+  color: var(--text-main) !important;
   margin: 0 !important;
   letter-spacing: -0.02em !important;
 }
@@ -1741,8 +1892,12 @@ td.ContributionCalendar-day:hover {
 
 .activity-title-text p {
   font-size: 0.85rem !important;
-  color: #7d8590 !important;
+  color: var(--text-muted) !important;
   margin: 4px 0 0 0 !important;
+}
+
+[data-theme="dark"] .activity-title-text p {
+  color: #7d8590 !important;
 }
 
 /* Badge Pills */
@@ -1803,11 +1958,11 @@ td.ContributionCalendar-day:hover {
 
 .rpg-persona-card {
   position: relative !important;
-  background: #0b0f17 !important;
-  border: 1px solid #1a2333 !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 20px !important;
   padding: 32px !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: var(--card-shadow) !important;
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
@@ -1815,8 +1970,19 @@ td.ContributionCalendar-day:hover {
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s ease, box-shadow 0.3s ease !important;
 }
 
+[data-theme="dark"] .rpg-persona-card {
+  background: #0b0f17 !important;
+  border: 1px solid #1a2333 !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
 .rpg-persona-card:hover {
   transform: translateY(-4px) !important;
+  border-color: var(--accent) !important;
+  box-shadow: var(--card-shadow) !important;
+}
+
+[data-theme="dark"] .rpg-persona-card:hover {
   border-color: rgba(188, 140, 255, 0.4) !important;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 25px rgba(188, 140, 255, 0.15) !important;
 }
@@ -1891,11 +2057,15 @@ td.ContributionCalendar-day:hover {
 
 .rpg-flavor-text {
   font-size: 0.95rem !important;
-  color: #7d8590 !important;
+  color: var(--text-muted) !important;
   font-style: italic !important;
   max-width: 600px !important;
   line-height: 1.5 !important;
   margin: 0 auto !important;
+}
+
+[data-theme="dark"] .rpg-flavor-text {
+  color: #7d8590 !important;
 }
 
 /* Attributes Grid */
@@ -1912,14 +2082,23 @@ td.ContributionCalendar-day:hover {
   display: flex !important;
   flex-direction: column !important;
   gap: 6px !important;
-  background: #0d131f !important;
-  border: 1px solid #1a2333 !important;
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 12px !important;
   padding: 16px !important;
   transition: border-color 0.2s ease !important;
 }
 
 .attribute-item:hover {
+  border-color: var(--accent) !important;
+}
+
+[data-theme="dark"] .attribute-item {
+  background: #0d131f !important;
+  border: 1px solid #1a2333 !important;
+}
+
+[data-theme="dark"] .attribute-item:hover {
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
@@ -1932,28 +2111,43 @@ td.ContributionCalendar-day:hover {
 }
 
 .attribute-name {
-  color: #c9d1d9 !important;
+  color: var(--text-muted) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
   font-size: 0.78rem !important;
 }
 
+[data-theme="dark"] .attribute-name {
+  color: #c9d1d9 !important;
+}
+
 .attribute-item.attr-pwr .attribute-name { color: #f0883e !important; }
-.attribute-item.attr-sp .attribute-name { color: #58a6ff !important; }
-.attribute-item.attr-stm .attribute-name { color: #39d353 !important; }
-.attribute-item.attr-vrs .attribute-name { color: #bc8cff !important; }
+.attribute-item.attr-sp .attribute-name { color: #218bff !important; }
+[data-theme="dark"] .attribute-item.attr-sp .attribute-name { color: #58a6ff !important; }
+.attribute-item.attr-stm .attribute-name { color: #2ea043 !important; }
+[data-theme="dark"] .attribute-item.attr-stm .attribute-name { color: #39d353 !important; }
+.attribute-item.attr-vrs .attribute-name { color: #8250df !important; }
+[data-theme="dark"] .attribute-item.attr-vrs .attribute-name { color: #bc8cff !important; }
 
 .attribute-val {
+  color: var(--text-main) !important;
+}
+
+[data-theme="dark"] .attribute-val {
   color: #ffffff !important;
 }
 
 .attribute-track {
   width: 100% !important;
   height: 6px !important;
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--bg-color) !important;
   border-radius: 10px !important;
   position: relative !important;
   overflow: hidden !important;
+}
+
+[data-theme="dark"] .attribute-track {
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .attribute-bar {
@@ -1969,21 +2163,31 @@ td.ContributionCalendar-day:hover {
 
 /* --- Premium Chronological Coding Odyssey Timeline --- */
 .timeline-card-section {
-  background: #0b0f17 !important;
-  border: 1px solid #1a2333 !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 16px !important;
   padding: 32px !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: var(--card-shadow) !important;
   margin-top: 28px !important;
+}
+
+[data-theme="dark"] .timeline-card-section {
+  background: #0b0f17 !important;
+  border: 1px solid #1a2333 !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5) !important;
 }
 
 .timeline-header {
   margin-bottom: 32px !important;
-  border-bottom: 1px solid #1a2333 !important;
+  border-bottom: 1px solid var(--border-color) !important;
   padding-bottom: 18px !important;
   display: flex !important;
   align-items: center !important;
   gap: 12px !important;
+}
+
+[data-theme="dark"] .timeline-header {
+  border-bottom-color: #1a2333 !important;
 }
 
 .timeline-compass-icon {
@@ -2002,15 +2206,23 @@ td.ContributionCalendar-day:hover {
 .timeline-title-text h3 {
   font-size: 1.35rem !important;
   font-weight: 700 !important;
-  color: #ffffff !important;
+  color: var(--text-main) !important;
   margin: 0 !important;
   letter-spacing: -0.02em !important;
 }
 
+[data-theme="dark"] .timeline-title-text h3 {
+  color: #ffffff !important;
+}
+
 .timeline-title-text p {
   font-size: 0.85rem !important;
-  color: #7d8590 !important;
+  color: var(--text-muted) !important;
   margin: 4px 0 0 0 !important;
+}
+
+[data-theme="dark"] .timeline-title-text p {
+  color: #7d8590 !important;
 }
 
 /* Timeline Track Layout */
@@ -2027,9 +2239,13 @@ td.ContributionCalendar-day:hover {
   top: 0 !important;
   bottom: 0 !important;
   width: 2px !important;
-  background: linear-gradient(to bottom, #1a2333 0%, #bc8cff 15%, #58a6ff 50%, #39d353 85%, #1a2333 100%) !important;
+  background: linear-gradient(to bottom, var(--border-color) 0%, #bc8cff 15%, #218bff 50%, #39d353 85%, var(--border-color) 100%) !important;
   transform: translateX(-50%) !important;
   pointer-events: none !important;
+}
+
+[data-theme="dark"] .odyssey-line {
+  background: linear-gradient(to bottom, #1a2333 0%, #bc8cff 15%, #58a6ff 50%, #39d353 85%, #1a2333 100%) !important;
 }
 
 /* Individual Milestone Items */
@@ -2052,12 +2268,18 @@ td.ContributionCalendar-day:hover {
   width: 16px !important;
   height: 16px !important;
   border-radius: 50% !important;
-  background: #0d131f !important;
-  border: 3px solid #58a6ff !important;
+  background: var(--bg-secondary) !important;
+  border: 3px solid var(--accent) !important;
   transform: translateX(-50%) !important;
   z-index: 5 !important;
-  box-shadow: 0 0 10px rgba(88, 166, 255, 0.6) !important;
+  box-shadow: 0 0 10px rgba(33, 139, 255, 0.4) !important;
   transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s !important;
+}
+
+[data-theme="dark"] .odyssey-marker {
+  background: #0d131f !important;
+  border-color: #58a6ff !important;
+  box-shadow: 0 0 10px rgba(88, 166, 255, 0.6) !important;
 }
 
 .odyssey-item:hover .odyssey-marker {
@@ -2079,16 +2301,27 @@ td.ContributionCalendar-day:hover {
 }
 
 .odyssey-card {
-  background: #0d131f !important;
-  border: 1px solid #1a2333 !important;
+  background: var(--bg-tertiary) !important;
+  border: 1px solid var(--border-color) !important;
   border-radius: 12px !important;
   padding: 18px !important;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: var(--card-shadow) !important;
   position: relative !important;
   transition: all 0.3s ease !important;
 }
 
+[data-theme="dark"] .odyssey-card {
+  background: #0d131f !important;
+  border-color: #1a2333 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+}
+
 .odyssey-item:hover .odyssey-card {
+  border-color: var(--accent) !important;
+  box-shadow: var(--card-shadow) !important;
+}
+
+[data-theme="dark"] .odyssey-item:hover .odyssey-card {
   border-color: rgba(88, 166, 255, 0.3) !important;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(88, 166, 255, 0.05) !important;
 }
@@ -2097,26 +2330,38 @@ td.ContributionCalendar-day:hover {
 .odyssey-date {
   font-size: 0.72rem !important;
   font-weight: 700 !important;
-  color: #58a6ff !important;
+  color: var(--accent) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
   margin-bottom: 6px !important;
   display: block !important;
 }
 
+[data-theme="dark"] .odyssey-date {
+  color: #58a6ff !important;
+}
+
 .odyssey-card h4 {
   font-size: 1rem !important;
   font-weight: 700 !important;
-  color: #ffffff !important;
+  color: var(--text-main) !important;
   margin-bottom: 6px !important;
   letter-spacing: -0.01em !important;
 }
 
+[data-theme="dark"] .odyssey-card h4 {
+  color: #ffffff !important;
+}
+
 .odyssey-card p {
   font-size: 0.85rem !important;
-  color: #7d8590 !important;
+  color: var(--text-muted) !important;
   line-height: 1.4 !important;
   margin: 0 !important;
+}
+
+[data-theme="dark"] .odyssey-card p {
+  color: #7d8590 !important;
 }
 
 /* Timeline Custom Milestone Themes */

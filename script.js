@@ -776,6 +776,16 @@ document.addEventListener("DOMContentLoaded", () => {
     gradientFill.addColorStop(0, 'rgba(88, 166, 255, 0.25)');
     gradientFill.addColorStop(1, 'rgba(88, 166, 255, 0.0)');
     
+    // Theme-adaptive Chart properties
+    const isDark = currentTheme === 'dark';
+    const chartGridColor = isDark ? 'rgba(26, 35, 51, 0.4)' : 'rgba(208, 215, 222, 0.4)';
+    const chartPointBorder = isDark ? '#0b0f17' : '#ffffff';
+    const chartTooltipBg = isDark ? '#0d131f' : '#ffffff';
+    const chartTooltipTitle = isDark ? '#ffffff' : '#24292f';
+    const chartTooltipBody = isDark ? '#58a6ff' : '#218bff';
+    const chartTooltipBorder = isDark ? '#1a2333' : '#d0d7de';
+    const chartTickColor = isDark ? '#7d8590' : '#57606a';
+
     chartsInstance.bar = new Chart(ctxAct, {
       type: 'line',
       data: {
@@ -786,7 +796,7 @@ document.addEventListener("DOMContentLoaded", () => {
           borderColor: '#58a6ff',
           borderWidth: 2.5,
           pointBackgroundColor: '#58a6ff',
-          pointBorderColor: '#0b0f17',
+          pointBorderColor: chartPointBorder,
           pointBorderWidth: 1.5,
           pointRadius: 4,
           pointHoverRadius: 6,
@@ -804,10 +814,10 @@ document.addEventListener("DOMContentLoaded", () => {
           },
           tooltip: {
             enabled: true,
-            backgroundColor: '#0d131f',
-            titleColor: '#ffffff',
-            bodyColor: '#58a6ff',
-            borderColor: '#1a2333',
+            backgroundColor: chartTooltipBg,
+            titleColor: chartTooltipTitle,
+            bodyColor: chartTooltipBody,
+            borderColor: chartTooltipBorder,
             borderWidth: 1,
             padding: 10,
             displayColors: false,
@@ -821,11 +831,11 @@ document.addEventListener("DOMContentLoaded", () => {
         scales: {
           x: {
             grid: {
-              color: 'rgba(26, 35, 51, 0.4)',
+              color: chartGridColor,
               tickBorderDash: [3, 3]
             },
             ticks: {
-              color: '#7d8590',
+              color: chartTickColor,
               font: {
                 size: 10
               },
@@ -834,11 +844,11 @@ document.addEventListener("DOMContentLoaded", () => {
           },
           y: {
             grid: {
-              color: 'rgba(26, 35, 51, 0.4)',
+              color: chartGridColor,
               tickBorderDash: [3, 3]
             },
             ticks: {
-              color: '#7d8590',
+              color: chartTickColor,
               font: {
                 size: 10
               },
