@@ -55,6 +55,131 @@ document.addEventListener("DOMContentLoaded", () => {
   function show(el) { el.classList.remove("hidden"); }
   function hide(el) { el.classList.add("hidden"); }
 
+  // ─── Scraped GitHub Contribution Parser ───────────────────
+  function parseContributions(html) {
+    if (!html) {
+      return { total: 0, activeDays: 0, maxStreak: 0, currentStreak: 0 };
+    }
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+
+    // Extract Total Contributions
+    let total = 0;
+    const headerEl = tempDiv.querySelector('.js-yearly-contributions h2');
+    if (headerEl) {
+      const match = headerEl.textContent.match(/([\d,]+)\s+contribution/i);
+      if (match) total = parseInt(match[1].replace(/,/g, '')) || 0;
+    }
+
+    // Query days
+    const dayCells = Array.from(tempDiv.querySelectorAll('td.ContributionCalendar-day, rect.ContributionCalendar-day'));
+    dayCells.sort((a, b) => {
+      const dateA = a.getAttribute('data-date') || "";
+      const dateB = b.getAttribute('data-date') || "";
+      return dateA.localeCompare(dateB);
+    });
+
+    let activeDays = 0;
+    let maxStreak = 0;
+    let currentStreak = 0;
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    dayCells.forEach(cell => {
+      const date = cell.getAttribute('data-date');
+      if (!date) return;
+
+      const level = parseInt(cell.getAttribute('data-level') || "0");
+      if (level > 0) {
+        activeDays++;
+        currentStreak++;
+        if (currentStreak > maxStreak) {
+          maxStreak = currentStreak;
+        }
+      } else {
+        if (date < todayStr) {
+          currentStreak = 0;
+        }
+      }
+    });
+
+    return { total, activeDays, maxStreak, currentStreak };
+  }
+
+  // ─── RPG Skill Stats & Class Determiner ───────────────────
+  function calculateRPGStats(profile, repos, parsedConts) {
+    // 1. Calculate Power (PWR) based on cumulative stars + forks
+    let stars = 0, forks = 0;
+    let langCountObj = {};
+    repos.forEach(r => {
+      stars += r.stargazers_count || 0;
+      forks += r.forks_count || 0;
+      if (r.language) {
+        langCountObj[r.language] = (langCountObj[r.language] || 0) + 1;
+      }
+    });
+    const totalImpact = stars + forks;
+    const pwrScore = Math.min(100, Math.max(12, Math.round(Math.sqrt(totalImpact) * 16)));
+
+    // 2. Calculate Speed (SP) based on repositories active in the past 60 days
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+    const activeRepos = repos.filter(r => new Date(r.updated_at) > sixtyDaysAgo).length;
+    const spScore = Math.min(100, Math.max(10, Math.round(activeRepos * 22)));
+
+    // 3. Calculate Stamina (STM) based on parsed contributions data
+    const stmScore = parsedConts 
+      ? Math.min(100, Math.max(15, Math.round((parsedConts.activeDays * 0.45) + (parsedConts.maxStreak * 2.2))))
+      : 50;
+
+    // 4. Calculate Versatility (VRS) based on distinct languages
+    const distinctLangs = Object.keys(langCountObj).length;
+    const vrsScore = Math.min(100, Math.max(10, Math.round(distinctLangs * 18)));
+
+    // Determine highest attribute for Class determination
+    const scores = { PWR: pwrScore, SP: spScore, STM: stmScore, VRS: vrsScore };
+    let highestAttr = "SP";
+    let maxVal = -1;
+    for (const [attr, val] of Object.entries(scores)) {
+      if (val > maxVal) {
+        maxVal = val;
+        highestAttr = attr;
+      }
+    }
+
+    let className = "Rapid Swiftblade";
+    let level = Math.max(1, Math.round((spScore + vrsScore) / 5.2));
+    let classBadge = "Rogue";
+    let flavorText = "A silent, rapid striker. Pushing hotfixes, refactoring architectures, and launching builds at blinding speeds. You resolve bugs before the browser can even refresh!";
+
+    if (highestAttr === "PWR") {
+      className = "Elite Code Warlord";
+      level = Math.max(1, Math.round((pwrScore + stmScore) / 5.2));
+      classBadge = "Warrior";
+      flavorText = "Your code holds colossal impact. Starred and forked by developers worldwide, you forge high-caliber repository monuments that stand tall in the GitHub arena!";
+    } else if (highestAttr === "STM") {
+      className = "Commit Paladin";
+      level = Math.max(1, Math.round((stmScore + spScore) / 5.2));
+      classBadge = "Paladin";
+      flavorText = "An unstoppable force of commits. Day after day, you push green nodes into the calendar grid, building an unbreakable coding legacy through pure grit!";
+    } else if (highestAttr === "VRS") {
+      className = "Polyglot Archmage";
+      level = Math.max(1, Math.round((vrsScore + pwrScore) / 5.2));
+      classBadge = "Mage";
+      flavorText = "A master of many tongues, weaving spells in JavaScript, Python, and CSS. No tech stack is too foreign, and no compiler can resist your incantations!";
+    }
+
+    return {
+      pwr: pwrScore,
+      sp: spScore,
+      stm: stmScore,
+      vrs: vrsScore,
+      className,
+      level,
+      classBadge,
+      flavorText
+    };
+  }
+
   // Search History Management
   function loadHistory() {
     const history = JSON.parse(localStorage.getItem("gh_history") || "[]");
@@ -90,6 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Handle Search Actions (Single or Compare)
   async function handleSearch() {
+    showAllRepos = false; // Reset expandable toggle state on new search
     const mainUser = usernameInput.value.trim();
     const compareUser = compareInput.value.trim();
 
@@ -728,6 +854,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let activeReposData = [];
   let currentSortMode = 'updated';
   let currentViewMode = 'grid';
+  let showAllRepos = false; // toggle state
 
   function renderReposList(repos, skipSort = false) {
     if (!repos) return;
@@ -741,6 +868,28 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeReposData.length === 0) {
       reposList.innerHTML = "<p style='color:var(--text-muted); grid-column: 1/-1; text-align: center; padding: 20px;'>No public repositories found.</p>";
       return;
+    }
+
+    // Dynamic Show All Button visibility & text calculation
+    const reposToggleContainer = document.getElementById("reposToggleContainer");
+    const toggleAllReposText = document.getElementById("toggleAllReposText");
+    const btnToggleAllRepos = document.getElementById("btnToggleAllRepos");
+
+    if (reposToggleContainer) {
+      if (activeReposData.length > 6) {
+        reposToggleContainer.classList.remove("hidden");
+        if (toggleAllReposText) {
+          if (showAllRepos) {
+            toggleAllReposText.textContent = "Show Less";
+            if (btnToggleAllRepos) btnToggleAllRepos.classList.add("expanded");
+          } else {
+            toggleAllReposText.textContent = `Show All Projects (${activeReposData.length})`;
+            if (btnToggleAllRepos) btnToggleAllRepos.classList.remove("expanded");
+          }
+        }
+      } else {
+        reposToggleContainer.classList.add("hidden");
+      }
     }
 
     // Sort repositories if not skipped
@@ -777,8 +926,8 @@ document.addEventListener("DOMContentLoaded", () => {
       'shell': '#89e051'
     };
 
-    // Slice top 6
-    const toShow = activeReposData.slice(0, 6);
+    // Slice based on expanded state
+    const toShow = showAllRepos ? activeReposData : activeReposData.slice(0, 6);
 
     reposList.innerHTML = toShow.map(r => {
       // Date formatting: DD/MM/YYYY matching mockup
@@ -834,9 +983,11 @@ document.addEventListener("DOMContentLoaded", () => {
   async function processCompare(user1, user2) {
     try {
       // Fetch concurrently for performance
-      const [data1, data2] = await Promise.all([
+      const [data1, data2, contributionsHTML1, contributionsHTML2] = await Promise.all([
         fetchUserData(user1).catch(e => { throw new Error(`User 1: ${e.message}`); }),
-        fetchUserData(user2).catch(e => { throw new Error(`User 2: ${e.message}`); })
+        fetchUserData(user2).catch(e => { throw new Error(`User 2: ${e.message}`); }),
+        fetchContributionsData(user1).catch(() => ""),
+        fetchContributionsData(user2).catch(() => "")
       ]);
 
       const [repos1, repos2] = await Promise.all([
@@ -845,8 +996,11 @@ document.addEventListener("DOMContentLoaded", () => {
       ]);
 
       // Persist both users to cache after fetching
-      setCache(user1, data1, repos1);
-      setCache(user2, data2, repos2);
+      setCache(user1, data1, repos1, contributionsHTML1);
+      setCache(user2, data2, repos2, contributionsHTML2);
+
+      const parsedConts1 = parseContributions(contributionsHTML1);
+      const parsedConts2 = parseContributions(contributionsHTML2);
 
       const stars1 = repos1.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
       const stars2 = repos2.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
@@ -862,19 +1016,61 @@ document.addEventListener("DOMContentLoaded", () => {
       highlightWinner('cmpRepos1', 'cmpRepos2', data1.public_repos || 0, data2.public_repos || 0);
       highlightWinner('cmpStars1', 'cmpStars2', stars1, stars2);
 
-      // Overall winner logic (rough score)
-      const score1 = (data1.followers || 0) + stars1;
-      const score2 = (data2.followers || 0) + stars2;
+      // ─── Calculate Craftsmanship Quality Scores (DQI) ───────
+      const calculateDQI = (repos) => {
+        if (!repos || repos.length === 0) {
+          return { docRate: 0, origRate: 0, avgSizeMB: "0.0", densityRate: 0, dqiScore: 0 };
+        }
+        const docRepos = repos.filter(r => r.description || (r.topics && r.topics.length > 0) || r.homepage).length;
+        const docRate = Math.round((docRepos / repos.length) * 100);
+
+        const originalRepos = repos.filter(r => !r.fork).length;
+        const origRate = Math.round((originalRepos / repos.length) * 100);
+
+        const totalSizeKB = repos.reduce((sum, r) => sum + (r.size || 0), 0);
+        const avgSizeKB = totalSizeKB / repos.length;
+        const avgSizeMB = (avgSizeKB / 1024).toFixed(1);
+
+        // Score avg size out of 100: assume average 15MB is 100 score
+        const sizeScore = Math.min(100, Math.round((avgSizeKB / 15360) * 100));
+        const densityRate = Math.max(10, sizeScore);
+
+        const dqiScore = Math.round((docRate + origRate + densityRate) / 3);
+
+        return { docRate, origRate, avgSizeMB, densityRate, dqiScore };
+      };
+
+      const dqi1 = calculateDQI(repos1);
+      const dqi2 = calculateDQI(repos2);
+
+      // ─── Calculate RPG Class Skill Attributes ────────────────
+      const rpg1 = calculateRPGStats(data1, repos1, parsedConts1);
+      const rpg2 = calculateRPGStats(data2, repos2, parsedConts2);
+
+      // Overall composite builder DNA score
+      const score1 = Math.round((dqi1.dqiScore * 0.4) + (rpg1.pwr * 0.2) + (rpg1.sp * 0.15) + (rpg1.stm * 0.15) + (rpg1.vrs * 0.1));
+      const score2 = Math.round((dqi2.dqiScore * 0.4) + (rpg2.pwr * 0.2) + (rpg2.sp * 0.15) + (rpg2.stm * 0.15) + (rpg2.vrs * 0.1));
 
       const card1 = document.getElementById('cmpUser1');
       const card2 = document.getElementById('cmpUser2');
       card1.classList.remove('winner-card');
       card2.classList.remove('winner-card');
 
-      if (score1 > score2) card1.classList.add('winner-card');
-      else if (score2 > score1) card2.classList.add('winner-card');
+      // Clear previous crown classes/displays
+      const crown1 = card1.querySelector('.cmp-crown-icon');
+      const crown2 = card2.querySelector('.cmp-crown-icon');
+      if (crown1) crown1.style.display = 'none';
+      if (crown2) crown2.style.display = 'none';
 
-      generateDeveloperAnalysis(data1, data2, stars1, stars2, forks1, forks2);
+      if (score1 > score2) {
+        card1.classList.add('winner-card');
+        if (crown1) crown1.style.display = 'block';
+      } else if (score2 > score1) {
+        card2.classList.add('winner-card');
+        if (crown2) crown2.style.display = 'block';
+      }
+
+      generateDeveloperAnalysis(data1, data2, rpg1, rpg2, dqi1, dqi2);
 
       hide(loadingEl);
       show(compareSection);
@@ -906,59 +1102,293 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function generateDeveloperAnalysis(data1, data2, stars1, stars2, forks1, forks2) {
+  function generateDeveloperAnalysis(data1, data2, rpg1, rpg2, dqi1, dqi2) {
     const analysisContainer = document.getElementById('developer-analysis');
     if (!analysisContainer) return;
 
     analysisContainer.innerHTML = '';
 
-    const repos1 = data1.public_repos || 0;
-    const repos2 = data2.public_repos || 0;
-    const followers1 = data1.followers || 0;
-    const followers2 = data2.followers || 0;
-
     const name1 = data1.login || "User 1";
     const name2 = data2.login || "User 2";
 
-    const getWinner = (val1, val2) => {
-      if (val1 > val2) return name1;
-      if (val2 > val1) return name2;
-      return "Tie";
+    // 1. Calculate Tug of War divider percentages
+    const getTugWidths = (val1, val2) => {
+      const total = (val1 + val2) || 1;
+      const w1 = Math.round((val1 / total) * 100);
+      const w2 = 100 - w1;
+      return { w1, w2 };
     };
 
-    const reposWinner = getWinner(repos1, repos2);
-    const starsWinner = getWinner(stars1, stars2);
-    const forksWinner = getWinner(forks1, forks2);
-    const followersWinner = getWinner(followers1, followers2);
+    const pwrTug = getTugWidths(rpg1.pwr, rpg2.pwr);
+    const spTug = getTugWidths(rpg1.sp, rpg2.sp);
+    const stmTug = getTugWidths(rpg1.stm, rpg2.stm);
+    const vrsTug = getTugWidths(rpg1.vrs, rpg2.vrs);
 
-    const score1 = (repos1 * 0.25) + (stars1 * 0.35) + (forks1 * 0.20) + (followers1 * 0.20);
-    const score2 = (repos2 * 0.25) + (stars2 * 0.35) + (forks2 * 0.20) + (followers2 * 0.20);
+    // 2. Calculate compatibility synergy
+    const calculateSynergy = (r1, r2) => {
+      const diffPwr = Math.abs(r1.pwr - r2.pwr);
+      const diffSp = Math.abs(r1.sp - r2.sp);
+      const diffStm = Math.abs(r1.stm - r2.stm);
+      const diffVrs = Math.abs(r1.vrs - r2.vrs);
+      const totalDiff = diffPwr + diffSp + diffStm + diffVrs;
 
-    let finalResultHTML = '';
-    if (score1 > score2) {
-      finalResultHTML = `🏆 ${name1} has a stronger GitHub profile than ${name2}`;
-    } else if (score2 > score1) {
-      finalResultHTML = `🏆 ${name2} has a stronger GitHub profile than ${name1}`;
-    } else {
-      finalResultHTML = `Both profiles have similar strength.`;
-    }
+      if (r1.classBadge === r2.classBadge) {
+        const syn = Math.min(98, 90 + Math.round(10 - totalDiff / 12));
+        return {
+          score: syn,
+          title: "Coding Twins & Rivals",
+          desc: `Both are talented <strong>${r1.className}</strong> classes. You share identical programming instincts and work speed, enabling rapid collaborative development but occasionally competing over who gets to merge changes!`
+        };
+      }
+
+      if ((r1.classBadge === 'Mage' && r2.classBadge === 'Paladin') || (r2.classBadge === 'Mage' && r1.classBadge === 'Paladin')) {
+        const syn = Math.min(99, 94 + Math.round((diffVrs + diffStm) / 10));
+        return {
+          score: syn,
+          title: "The Unstoppable Engine",
+          desc: `An absolute dream team! One provides the incredible code consistency and stamina of a <strong>Paladin</strong>, while the other weaves versatile systems architecture magic as an <strong>Archmage</strong>.`
+        };
+      }
+
+      if ((r1.classBadge === 'Warrior' && r2.classBadge === 'Rogue') || (r2.classBadge === 'Warrior' && r1.classBadge === 'Rogue')) {
+        const syn = Math.min(99, 93 + Math.round((diffPwr + diffSp) / 10));
+        return {
+          score: syn,
+          title: "Power & Blinding Speed",
+          desc: `A highly lethal combination. One builds massive, global, highly-starred landmark repositories as a <strong>Warlord</strong>, while the other hotfixes, optimizes, and ships at blinding speed as a <strong>Swiftblade</strong>.`
+        };
+      }
+
+      const syn = Math.min(96, 85 + Math.round(totalDiff / 8));
+      return {
+        score: syn,
+        title: "Balanced Tech Collaborators",
+        desc: `Your programming attributes blend in excellent synergy. With highly complementary skills across velocity, stamina, versatility, and power, you make a highly reliable development team.`
+      };
+    };
+
+    const synergy = calculateSynergy(rpg1, rpg2);
 
     const html = `
-      <h3>Developer Comparison Analysis</h3>
-      <div class="analysis-category">
-        <span>Repositories Winner:</span> <strong>${reposWinner}</strong>
-      </div>
-      <div class="analysis-category">
-        <span>Stars Winner:</span> <strong>${starsWinner}</strong>
-      </div>
-      <div class="analysis-category">
-        <span>Forks Winner:</span> <strong>${forksWinner}</strong>
-      </div>
-      <div class="analysis-category">
-        <span>Followers Winner:</span> <strong>${followersWinner}</strong>
-      </div>
-      <div class="analysis-result">
-        ${finalResultHTML}
+      <div class="arena-grid-panels">
+        
+        <!-- Section A: 4 Core Dimensions Tug-of-War -->
+        <div class="arena-card-premium dna-comparison-card">
+          <div class="card-header-arena">
+            <span class="arena-icon-wrapper theme-orange">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                <line x1="9" y1="20" x2="15" y2="20"></line>
+                <line x1="12" y1="4" x2="12" y2="20"></line>
+              </svg>
+            </span>
+            <div class="arena-title-text">
+              <h3>Developer DNA Tug-of-War</h3>
+              <p>Side-by-side force balance on 4 core programming pillars</p>
+            </div>
+          </div>
+
+          <div class="tug-sliders-container">
+            <!-- Power Row -->
+            <div class="tug-slider-row">
+              <div class="tug-labels-row">
+                <span class="tug-score left-score">${rpg1.pwr}</span>
+                <span class="tug-metric-name">⚔️ Power (Code Impact)</span>
+                <span class="tug-score right-score">${rpg2.pwr}</span>
+              </div>
+              <div class="tug-slider-track">
+                <div class="tug-bar left-bar" style="width: ${pwrTug.w1}%"></div>
+                <div class="tug-bar right-bar" style="width: ${pwrTug.w2}%"></div>
+                <div class="tug-marker" style="left: ${pwrTug.w1}%"></div>
+              </div>
+            </div>
+
+            <!-- Velocity Row -->
+            <div class="tug-slider-row">
+              <div class="tug-labels-row">
+                <span class="tug-score left-score">${rpg1.sp}</span>
+                <span class="tug-metric-name">⚡ Velocity (Momentum)</span>
+                <span class="tug-score right-score">${rpg2.sp}</span>
+              </div>
+              <div class="tug-slider-track">
+                <div class="tug-bar left-bar" style="width: ${spTug.w1}%"></div>
+                <div class="tug-bar right-bar" style="width: ${spTug.w2}%"></div>
+                <div class="tug-marker" style="left: ${spTug.w1}%"></div>
+              </div>
+            </div>
+
+            <!-- Stamina Row -->
+            <div class="tug-slider-row">
+              <div class="tug-labels-row">
+                <span class="tug-score left-score">${rpg1.stm}</span>
+                <span class="tug-metric-name">🛡️ Stamina (Consistency)</span>
+                <span class="tug-score right-score">${rpg2.stm}</span>
+              </div>
+              <div class="tug-slider-track">
+                <div class="tug-bar left-bar" style="width: ${stmTug.w1}%"></div>
+                <div class="tug-bar right-bar" style="width: ${stmTug.w2}%"></div>
+                <div class="tug-marker" style="left: ${stmTug.w1}%"></div>
+              </div>
+            </div>
+
+            <!-- Versatility Row -->
+            <div class="tug-slider-row">
+              <div class="tug-labels-row">
+                <span class="tug-score left-score">${rpg1.vrs}</span>
+                <span class="tug-metric-name">🔮 Versatility (Languages)</span>
+                <span class="tug-score right-score">${rpg2.vrs}</span>
+              </div>
+              <div class="tug-slider-track">
+                <div class="tug-bar left-bar" style="width: ${vrsTug.w1}%"></div>
+                <div class="tug-bar right-bar" style="width: ${vrsTug.w2}%"></div>
+                <div class="tug-marker" style="left: ${vrsTug.w1}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section B: Craftsmanship & DQI Score -->
+        <div class="arena-card-premium DQI-metrics-card">
+          <div class="card-header-arena">
+            <span class="arena-icon-wrapper theme-green">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </span>
+            <div class="arena-title-text">
+              <h3>Craftsmanship & Project Quality Index</h3>
+              <p>Focusing on code original depth and clean project documentation standards</p>
+            </div>
+          </div>
+
+          <div class="craftsmanship-grid-arena">
+            <!-- DQI Card -->
+            <div class="craft-metric-item overall-dqi-item">
+              <div class="craft-header-row">
+                <h4>Developer Quality Index (DQI)</h4>
+                <span class="dqi-formula-tip" title="Composite score of Documentation, Originality, and Size density">Craftsmanship Standard</span>
+              </div>
+              <div class="craft-comparison-body">
+                <div class="craft-user-score left-user">
+                  <span class="score-percent">${dqi1.dqiScore}%</span>
+                  <span class="username-sub">${name1}</span>
+                </div>
+                <div class="dqi-vs-bar-container">
+                  <div class="dqi-vs-track">
+                    <div class="dqi-vs-fill left-fill" style="width: ${dqi1.dqiScore}%"></div>
+                  </div>
+                  <div class="dqi-vs-track">
+                    <div class="dqi-vs-fill right-fill" style="width: ${dqi2.dqiScore}%"></div>
+                  </div>
+                </div>
+                <div class="craft-user-score right-user">
+                  <span class="score-percent">${dqi2.dqiScore}%</span>
+                  <span class="username-sub">${name2}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3 Specific Metrics Grid -->
+            <div class="craft-sub-grid">
+              <!-- Doc Rate -->
+              <div class="craft-sub-card">
+                <div class="sub-card-header">
+                  <span>📝 Documentation Rate</span>
+                </div>
+                <div class="sub-card-comparison">
+                  <div class="sub-val left-val ${dqi1.docRate > dqi2.docRate ? 'val-winner' : ''}">${dqi1.docRate}%</div>
+                  <div class="sub-divider-vs">vs</div>
+                  <div class="sub-val right-val ${dqi2.docRate > dqi1.docRate ? 'val-winner' : ''}">${dqi2.docRate}%</div>
+                </div>
+                <div class="sub-card-desc">Repos with descriptions or linked homepages</div>
+              </div>
+
+              <!-- Originality Focus -->
+              <div class="craft-sub-card">
+                <div class="sub-card-header">
+                  <span>🔨 Originality Focus</span>
+                </div>
+                <div class="sub-card-comparison">
+                  <div class="sub-val left-val ${dqi1.origRate > dqi2.origRate ? 'val-winner' : ''}">${dqi1.origRate}%</div>
+                  <div class="sub-divider-vs">vs</div>
+                  <div class="sub-val right-val ${dqi2.origRate > dqi1.origRate ? 'val-winner' : ''}">${dqi2.origRate}%</div>
+                </div>
+                <div class="sub-card-desc">Directly owned projects vs simple forks</div>
+              </div>
+
+              <!-- Average Size -->
+              <div class="craft-sub-card">
+                <div class="sub-card-header">
+                  <span>📁 Average Project Depth</span>
+                </div>
+                <div class="sub-card-comparison">
+                  <div class="sub-val left-val ${parseFloat(dqi1.avgSizeMB) > parseFloat(dqi2.avgSizeMB) ? 'val-winner' : ''}">${dqi1.avgSizeMB} MB</div>
+                  <div class="sub-divider-vs">vs</div>
+                  <div class="sub-val right-val ${parseFloat(dqi2.avgSizeMB) > parseFloat(dqi1.avgSizeMB) ? 'val-winner' : ''}">${dqi2.avgSizeMB} MB</div>
+                </div>
+                <div class="sub-card-desc">Average storage size of code repositories</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section C: RPG Compatibility Synergy -->
+        <div class="arena-card-premium synergy-clash-card">
+          <div class="card-header-arena">
+            <span class="arena-icon-wrapper theme-purple">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                <polyline points="2 17 12 22 22 17"></polyline>
+                <polyline points="2 12 12 17 22 12"></polyline>
+              </svg>
+            </span>
+            <div class="arena-title-text">
+              <h3>Archetype Clash & Team Synergy</h3>
+              <p>Compatibility analysis based on role play developer classes</p>
+            </div>
+          </div>
+
+          <div class="synergy-clash-body">
+            <div class="synergy-mini-card left-mini">
+              <span class="mini-lvl-badge">Lvl ${rpg1.level}</span>
+              <h5>${rpg1.className}</h5>
+              <span class="mini-role-tag">${rpg1.classBadge}</span>
+            </div>
+
+            <div class="synergy-score-circle-container">
+              <div class="synergy-score-radial">
+                <svg viewBox="0 0 36 36" class="circular-chart-arena">
+                  <path class="circle-bg-arena"
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path class="circle-fill-arena"
+                    stroke-dasharray="${synergy.score}, 100"
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                </svg>
+                <div class="synergy-percentage-label">${synergy.score}%</div>
+              </div>
+              <span class="synergy-label-sub">Team Synergy</span>
+            </div>
+
+            <div class="synergy-mini-card right-mini">
+              <span class="mini-lvl-badge">Lvl ${rpg2.level}</span>
+              <h5>${rpg2.className}</h5>
+              <span class="mini-role-tag">${rpg2.classBadge}</span>
+            </div>
+          </div>
+
+          <div class="synergy-compatibility-summary">
+            <h4>⚔️ Synergy: ${synergy.title}</h4>
+            <p>${synergy.desc}</p>
+          </div>
+        </div>
+
       </div>
     `;
 
@@ -1017,6 +1447,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Toggle dynamic Show All Repos list expansion
+  const btnToggleAllRepos = document.getElementById("btnToggleAllRepos");
+  if (btnToggleAllRepos) {
+    btnToggleAllRepos.addEventListener("click", () => {
+      showAllRepos = !showAllRepos;
+      renderReposList(activeReposData, true); // skip sorting, just re-layout
+      
+      // Smooth scroll back to repositories header if user collapses
+      if (!showAllRepos) {
+        const reposSection = document.querySelector(".repos-section");
+        if (reposSection) {
+          reposSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    });
+  }
+
   // === Holographic RPG Persona Card Generator ===
   function generateRPGCard(userData, reposData, contributionsHTML) {
     const rpgCardSection = document.getElementById("rpgCardSection");
@@ -1024,138 +1471,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
     rpgCardSection.innerHTML = "";
 
-    // 1. Calculate Power (PWR) based on cumulative stars + forks
-    let stars = 0, forks = 0;
-    let langCountObj = {};
-    reposData.forEach(r => {
-      stars += r.stargazers_count || 0;
-      forks += r.forks_count || 0;
-      if (r.language) {
-        langCountObj[r.language] = (langCountObj[r.language] || 0) + 1;
-      }
-    });
-    const totalImpact = stars + forks;
-    const pwrScore = Math.min(100, Math.max(12, Math.round(Math.sqrt(totalImpact) * 16)));
-
-    // 2. Calculate Speed (SP) based on repositories active in the past 60 days
-    const sixtyDaysAgo = new Date();
-    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-    const activeRepos = reposData.filter(r => new Date(r.updated_at) > sixtyDaysAgo).length;
-    const spScore = Math.min(100, Math.max(10, Math.round(activeRepos * 22)));
-
-    // 3. Calculate Stamina (STM) based on contributions calendar data
-    let activeDays = 0;
-    let maxStreak = 0;
-    if (contributionsHTML) {
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = contributionsHTML;
-      const dayCells = tempDiv.querySelectorAll('td.ContributionCalendar-day, rect.ContributionCalendar-day');
-      let currentStreak = 0;
-      const todayStr = new Date().toISOString().split('T')[0];
-
-      dayCells.forEach(cell => {
-        const date = cell.getAttribute('data-date');
-        if (!date) return;
-        const level = parseInt(cell.getAttribute('data-level') || "0");
-        if (level > 0) {
-          activeDays++;
-          currentStreak++;
-          if (currentStreak > maxStreak) maxStreak = currentStreak;
-        } else {
-          if (date < todayStr) currentStreak = 0;
-        }
-      });
-    }
-    const stmScore = contributionsHTML 
-      ? Math.min(100, Math.max(15, Math.round((activeDays * 0.45) + (maxStreak * 2.2))))
-      : 50;
-
-    // 4. Calculate Versatility (VRS) based on distinct languages
-    const distinctLangs = Object.keys(langCountObj).length;
-    const vrsScore = Math.min(100, Math.max(10, Math.round(distinctLangs * 18)));
-
-    // Determine highest attribute for Class determination
-    const scores = { PWR: pwrScore, SP: spScore, STM: stmScore, VRS: vrsScore };
-    let highestAttr = "SP";
-    let maxVal = -1;
-    for (const [attr, val] of Object.entries(scores)) {
-      if (val > maxVal) {
-        maxVal = val;
-        highestAttr = attr;
-      }
-    }
-
-    let className = "Rapid Swiftblade";
-    let level = Math.max(1, Math.round((spScore + vrsScore) / 5.2));
-    let classBadge = "Rogue";
-    let flavorText = "A silent, rapid striker. Pushing hotfixes, refactoring architectures, and launching builds at blinding speeds. You resolve bugs before the browser can even refresh!";
-
-    if (highestAttr === "PWR") {
-      className = "Elite Code Warlord";
-      level = Math.max(1, Math.round((pwrScore + stmScore) / 5.2));
-      classBadge = "Warrior";
-      flavorText = "Your code holds colossal impact. Starred and forked by developers worldwide, you forge high-caliber repository monuments that stand tall in the GitHub arena!";
-    } else if (highestAttr === "STM") {
-      className = "Commit Paladin";
-      level = Math.max(1, Math.round((stmScore + spScore) / 5.2));
-      classBadge = "Paladin";
-      flavorText = "An unstoppable force of commits. Day after day, you push green nodes into the calendar grid, building an unbreakable coding legacy through pure grit!";
-    } else if (highestAttr === "VRS") {
-      className = "Polyglot Archmage";
-      level = Math.max(1, Math.round((vrsScore + pwrScore) / 5.2));
-      classBadge = "Mage";
-      flavorText = "A master of many tongues, weaving spells in JavaScript, Python, and CSS. No tech stack is too foreign, and no compiler can resist your incantations!";
-    }
+    const parsedConts = parseContributions(contributionsHTML);
+    const stats = calculateRPGStats(userData, reposData, parsedConts);
 
     const cardMarkup = `
       <div class="rpg-persona-card">
         <div class="rpg-header">
           <div class="rpg-avatar-wrapper">
             <img src="${userData.avatar_url}" alt="${userData.login}" class="rpg-avatar" />
-            <span class="rpg-level-badge">Lvl ${level} ${classBadge}</span>
+            <span class="rpg-level-badge">Lvl ${stats.level} ${stats.classBadge}</span>
           </div>
-          <h2 class="rpg-class-title">${className}</h2>
-          <p class="rpg-flavor-text">"${flavorText}"</p>
+          <h2 class="rpg-class-title">${stats.className}</h2>
+          <p class="rpg-flavor-text">"${stats.flavorText}"</p>
         </div>
 
         <div class="rpg-attributes">
           <div class="attribute-item attr-pwr">
             <div class="attribute-info">
               <span class="attribute-name">⚔️ Power (Impact)</span>
-              <span class="attribute-val">${pwrScore}</span>
+              <span class="attribute-val">${stats.pwr}</span>
             </div>
             <div class="attribute-track">
-              <div class="attribute-bar" style="width: ${pwrScore}%"></div>
+              <div class="attribute-bar" style="width: ${stats.pwr}%"></div>
             </div>
           </div>
 
           <div class="attribute-item attr-sp">
             <div class="attribute-info">
               <span class="attribute-name">⚡ Speed (Velocity)</span>
-              <span class="attribute-val">${spScore}</span>
+              <span class="attribute-val">${stats.sp}</span>
             </div>
             <div class="attribute-track">
-              <div class="attribute-bar" style="width: ${spScore}%"></div>
+              <div class="attribute-bar" style="width: ${stats.sp}%"></div>
             </div>
           </div>
 
           <div class="attribute-item attr-stm">
             <div class="attribute-info">
               <span class="attribute-name">🛡️ Stamina (Consistency)</span>
-              <span class="attribute-val">${stmScore}</span>
+              <span class="attribute-val">${stats.stm}</span>
             </div>
             <div class="attribute-track">
-              <div class="attribute-bar" style="width: ${stmScore}%"></div>
+              <div class="attribute-bar" style="width: ${stats.stm}%"></div>
             </div>
           </div>
 
           <div class="attribute-item attr-vrs">
             <div class="attribute-info">
               <span class="attribute-name">🔮 Versatility (Languages)</span>
-              <span class="attribute-val">${vrsScore}</span>
+              <span class="attribute-val">${stats.vrs}</span>
             </div>
             <div class="attribute-track">
-              <div class="attribute-bar" style="width: ${vrsScore}%"></div>
+              <div class="attribute-bar" style="width: ${stats.vrs}%"></div>
             </div>
           </div>
         </div>

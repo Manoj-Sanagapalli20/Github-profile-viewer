@@ -286,6 +286,14 @@
             </div>
             
             <div id="reposList" class="repos-list grid-view"></div>
+            
+            <!-- Dynamic Show All Button Container -->
+            <div id="reposToggleContainer" class="repos-toggle-container hidden">
+              <button id="btnToggleAllRepos" class="repos-toggle-btn">
+                <span id="toggleAllReposText">Show All Projects (0)</span>
+                <span class="btn-arrow-icon">↓</span>
+              </button>
+            </div>
           </div>
 
           <!-- Timeline Section -->
@@ -297,39 +305,84 @@
 
         <!-- Compare View -->
         <div id="compareSection" class="compare-view hidden">
-          <h2>🆚 User Comparison</h2>
-          <div class="compare-grid">
+          <div class="compare-view-header">
+            <span class="compare-vs-icon">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"></path>
+              </svg>
+            </span>
+            <div class="compare-title-text">
+              <h2>Developer Arena Face-Off</h2>
+              <p>Comparing profiles on balanced skill metrics and software craftsmanship quality</p>
+            </div>
+          </div>
 
+          <div class="compare-profiles-container">
             <!-- User 1 Card -->
-            <div class="compare-card" id="cmpUser1">
-              <img id="cmpAvatar1" src="" alt="User 1" />
+            <div class="compare-card-premium" id="cmpUser1">
+              <div class="compare-card-avatar-wrapper">
+                <img id="cmpAvatar1" src="" alt="User 1" />
+                <span class="cmp-crown-icon">👑</span>
+              </div>
               <h3 id="cmpName1">User 1</h3>
-              <p id="cmpBio1">Bio</p>
-              <ul class="cmp-stats">
-                <li>Followers: <strong id="cmpFollowers1">0</strong></li>
-                <li>Public Repos: <strong id="cmpRepos1">0</strong></li>
-                <li>Total Stars: <strong id="cmpStars1">0</strong></li>
-              </ul>
-              <a id="cmpLink1" href="#" target="_blank">Profile ↗</a>
+              <p id="cmpBio1" class="cmp-bio">Bio</p>
+              <div class="cmp-basic-stats-grid">
+                <div class="cmp-basic-stat">
+                  <span class="label">Followers</span>
+                  <span class="value" id="cmpFollowers1">0</span>
+                </div>
+                <div class="cmp-basic-stat">
+                  <span class="label">Repos</span>
+                  <span class="value" id="cmpRepos1">0</span>
+                </div>
+                <div class="cmp-basic-stat">
+                  <span class="label">Stars</span>
+                  <span class="value" id="cmpStars1">0</span>
+                </div>
+              </div>
+              <div class="cmp-card-footer">
+                <a id="cmpLink1" href="#" target="_blank" class="cmp-profile-link">View Profile ↗</a>
+              </div>
+            </div>
+
+            <!-- VS Circle Badge -->
+            <div class="compare-vs-divider">
+              <div class="vs-circle">VS</div>
+              <div class="vs-divider-line"></div>
             </div>
 
             <!-- User 2 Card -->
-            <div class="compare-card" id="cmpUser2">
-              <img id="cmpAvatar2" src="" alt="User 2" />
+            <div class="compare-card-premium" id="cmpUser2">
+              <div class="compare-card-avatar-wrapper">
+                <img id="cmpAvatar2" src="" alt="User 2" />
+                <span class="cmp-crown-icon">👑</span>
+              </div>
               <h3 id="cmpName2">User 2</h3>
-              <p id="cmpBio2">Bio</p>
-              <ul class="cmp-stats">
-                <li>Followers: <strong id="cmpFollowers2">0</strong></li>
-                <li>Public Repos: <strong id="cmpRepos2">0</strong></li>
-                <li>Total Stars: <strong id="cmpStars2">0</strong></li>
-              </ul>
-              <a id="cmpLink2" href="#" target="_blank">Profile ↗</a>
+              <p id="cmpBio2" class="cmp-bio">Bio</p>
+              <div class="cmp-basic-stats-grid">
+                <div class="cmp-basic-stat">
+                  <span class="label">Followers</span>
+                  <span class="value" id="cmpFollowers2">0</span>
+                </div>
+                <div class="cmp-basic-stat">
+                  <span class="label">Repos</span>
+                  <span class="value" id="cmpRepos2">0</span>
+                </div>
+                <div class="cmp-basic-stat">
+                  <span class="label">Stars</span>
+                  <span class="value" id="cmpStars2">0</span>
+                </div>
+              </div>
+              <div class="cmp-card-footer">
+                <a id="cmpLink2" href="#" target="_blank" class="cmp-profile-link">View Profile ↗</a>
+              </div>
             </div>
-
           </div>
 
-          <!-- Developer Analysis Section -->
-          <div id="developer-analysis" class="analysis-section"></div>
+          <!-- Developer Analysis and dynamic comparison details (Tug-of-war, DQI, RPG Synergy) -->
+          <div id="developer-analysis" class="analysis-section-premium">
+            <!-- Dynamically generated via JS -->
+          </div>
         </div>
 
       </main>
