@@ -224,6 +224,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    document.body.classList.remove("landing-active");
+
     // Reset UI
     hide(dashboardSection);
     hide(compareSection);
